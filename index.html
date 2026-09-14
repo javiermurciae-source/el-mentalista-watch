@@ -37,7 +37,7 @@
       user-select: none;
     }
 
-    /* VISTA 1: CATÁLOGO NATIVO TV (0 reproductores arriba) */
+    /* 1. VISTA CATÁLOGO (CERO REPRODUCTORES Y CERO SERVIDORES VISIBLES) */
     #catalog-view {
       padding: 30px 48px;
     }
@@ -79,21 +79,16 @@
       border-radius: 20px;
       font-size: 0.85rem;
       font-weight: 800;
-      display: flex;
-      align-items: center;
-      gap: 6px;
     }
 
     .section-title {
       font-size: 1.35rem;
       font-weight: 900;
       margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
       color: #fff;
     }
 
+    /* Filas Horizontales con Desplazamiento Suave */
     .row-scroll-wrapper {
       position: relative;
       overflow-x: hidden;
@@ -107,7 +102,7 @@
       will-change: transform;
     }
 
-    /* Foco D-Pad para Control Remoto */
+    /* Elementos con Foco para Control Remoto */
     .tv-focus-item {
       cursor: pointer;
       border: 2px solid transparent;
@@ -120,6 +115,7 @@
       z-index: 50 !important;
     }
 
+    /* Botones de Temporadas */
     .season-btn {
       background: var(--surface);
       border: 2px solid var(--border);
@@ -138,6 +134,7 @@
       box-shadow: 0 6px 25px rgba(37, 99, 235, 0.5);
     }
 
+    /* Tarjetas de Episodios */
     .ep-card {
       background: var(--surface);
       border: 2px solid var(--border);
@@ -193,122 +190,72 @@
       line-height: 1.4;
     }
 
-    /* VISTA 2: PANTALLA COMPLETA DE REPRODUCCIÓN */
+    /* 2. VISTA REPRODUCTOR A PANTALLA COMPLETA 100% LIMPIA */
     #player-view {
       display: none;
       position: fixed;
       inset: 0;
       background: #000;
-      z-index: 1000;
-      flex-direction: column;
+      z-index: 9999;
+      width: 100vw;
+      height: 100vh;
     }
     #player-view.active {
-      display: flex;
+      display: block;
     }
-
-    .player-hud-top {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: linear-gradient(180deg, rgba(0,0,0,0.95) 0%, transparent 100%);
-      padding: 20px 36px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      z-index: 100;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-    #player-view:hover .player-hud-top,
-    #player-view.show-hud .player-hud-top {
-      opacity: 1;
-    }
-    .player-ep-headline {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .player-ep-num {
-      font-size: 0.85rem;
-      font-weight: 900;
-      color: var(--accent);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .player-ep-name {
-      font-size: 1.4rem;
-      font-weight: 900;
-      color: #fff;
-    }
-    .player-server-status {
-      font-size: 0.78rem;
-      color: var(--green);
-      font-weight: 800;
-    }
-
-    .player-actions-row {
-      display: flex;
-      gap: 14px;
-      align-items: center;
-    }
-    .player-btn {
-      background: rgba(255, 255, 255, 0.12);
-      border: 2px solid rgba(255, 255, 255, 0.25);
-      color: #fff;
-      padding: 10px 20px;
-      border-radius: 12px;
-      font-size: 0.95rem;
-      font-weight: 800;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .player-btn.primary {
-      background: var(--accent);
-      border-color: var(--accent);
-      box-shadow: 0 0 20px var(--accent-glow);
-    }
-    .player-btn:focus,
-    .player-btn.is-focused {
-      border-color: var(--tv-focus) !important;
-      box-shadow: 0 0 25px var(--tv-glow) !important;
-      transform: scale(1.06);
-    }
-
     .video-full-frame {
       width: 100%;
       height: 100%;
       border: 0;
-      flex: 1;
+      display: block;
     }
 
-    .player-servers-list {
+    /* Floating Controls: Aparecen solo al tocar una tecla y desaparecen en 3s */
+    .floating-tv-hud {
+      position: absolute;
+      top: 24px;
+      right: 36px;
       display: flex;
+      gap: 14px;
+      z-index: 10000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .floating-tv-hud.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .hud-button {
+      background: rgba(15, 23, 42, 0.9);
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(12px);
+      color: #fff;
+      padding: 12px 22px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
       gap: 8px;
     }
-    .server-tag-btn {
-      background: rgba(0, 0, 0, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #fff;
-      padding: 6px 14px;
-      border-radius: 8px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      cursor: pointer;
+    .hud-button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 0 20px var(--accent-glow);
     }
-    .server-tag-btn.active {
-      background: var(--tv-focus);
-      border-color: var(--tv-focus);
-      color: #000;
-      font-weight: 800;
+    .hud-button:focus,
+    .hud-button.is-focused {
+      border-color: var(--tv-focus) !important;
+      box-shadow: 0 0 30px var(--tv-glow) !important;
+      transform: scale(1.06);
     }
   </style>
 </head>
 <body>
 
-  <!-- 1. VISTA CATÁLOGO (Sin reproductor arriba) -->
+  <!-- 1. VISTA CATÁLOGO (Solo Temporadas y Episodios, sin servidores flotantes) -->
   <div id="catalog-view">
     <header>
       <div class="brand">
@@ -316,7 +263,7 @@
         <div class="brand-title">El Mentalista</div>
       </div>
       <div class="smart-server-badge">
-        <span>⚡ Auto-Selección Mejor Servidor Activa</span>
+        <span>⚡ Servidor Óptimo Automático</span>
       </div>
     </header>
 
@@ -333,26 +280,16 @@
     </div>
   </div>
 
-  <!-- 2. VISTA REPRODUCTOR (Solo al hacer clic) -->
+  <!-- 2. VISTA REPRODUCTOR A PANTALLA COMPLETA PURA -->
   <div id="player-view">
-    <div class="player-hud-top" id="player-hud">
-      <div class="player-ep-headline">
-        <span class="player-ep-num" id="hud-ep-tag">TEMPORADA 1 : EPISODIO 1</span>
-        <span class="player-ep-name" id="hud-ep-title">Piloto</span>
-        <span class="player-server-status" id="hud-server-info">⚡ Mejor Servidor: Hyper (Morencius HD)</span>
-      </div>
-
-      <div class="player-actions-row">
-        <div class="player-servers-list" id="hud-servers"></div>
-
-        <button class="player-btn primary tv-focus-item" id="btn-next-ep" onclick="playNextEpisode()">
-          ⏭️ Siguiente Episodio
-        </button>
-
-        <button class="player-btn tv-focus-item" id="btn-exit-player" onclick="closePlayerView()">
-          ✖ Volver al Menú
-        </button>
-      </div>
+    <!-- Controles flotantes discretos que desaparecen solos -->
+    <div class="floating-tv-hud" id="tv-hud">
+      <button class="hud-button primary tv-hud-item" id="btn-hud-next" onclick="playNextEpisode()">
+        ⏭️ Siguiente Episodio
+      </button>
+      <button class="hud-button tv-hud-item" id="btn-hud-exit" onclick="closePlayerView()">
+        ✖ Salir al Menú
+      </button>
     </div>
 
     <iframe id="cinema-frame" class="video-full-frame" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>
@@ -362,20 +299,14 @@
     let allEpisodes = [];
     let currentSeason = 1;
     let currentEp = null;
-    let currentServerIndex = 0;
 
+    // Fila 0: Temporadas | Fila 1: Episodios
     let currentRow = 0;
     let currentCol = 0;
     let isPlaying = false;
-    let hudTimeout = null;
-    let autoPlayInterval = null;
+    let hudTimer = null;
+    let autoPlayTimer = null;
 
-    /* RANKING INTELIGENTE DE SERVIDORES:
-       Prioridad 1: Hyper (Morencius) -> Carga en <400ms, audio Latino HD nativo.
-       Prioridad 2: Nebula (Martinshop) -> Servidor de alta velocidad sin límites de buffering.
-       Prioridad 3: Death Star (VidLink) / Goldmember -> Excelente estabilidad multilenguaje.
-       Prioridad 4: Eclipse (Dood) -> Fallback seguro.
-    */
     const SERVER_PRIORITY = [
       "hyper",
       "morencius",
@@ -384,24 +315,19 @@
       "goldmember",
       "death star",
       "vidlink",
-      "trinity",
-      "eclipse"
+      "trinity"
     ];
 
-    function getBestServer(servers) {
-      if (!servers || servers.length === 0) return null;
-
-      // Buscar por orden de calidad y velocidad
+    function pickBestServer(servers) {
+      if (!servers || servers.length === 0) return "";
       for (const rank of SERVER_PRIORITY) {
-        const found = servers.find(s => 
+        const match = servers.find(s => 
           (s.server && s.server.toLowerCase().includes(rank)) ||
           (s.embed_url && s.embed_url.toLowerCase().includes(rank))
         );
-        if (found) return found;
+        if (match) return match.embed_url;
       }
-
-      // Por defecto el primer servidor
-      return servers[0];
+      return servers[0].embed_url;
     }
 
     async function init() {
@@ -415,7 +341,7 @@
         setupDpadController();
         updateFocusUI();
       } catch (e) {
-        console.error("Error cargando episodios:", e);
+        console.error("Error al cargar episodios:", e);
       }
     }
 
@@ -459,7 +385,7 @@
         card.dataset.col = idx;
 
         card.onclick = () => {
-          openPlayerView(ep);
+          launchEpisode(ep);
         };
 
         const posterImg = ep.poster || 'https://image.tmdb.org/t/p/w500/snKUzvCl3kGv0RWBjEjnOXMGvdl.jpg';
@@ -477,46 +403,20 @@
       });
     }
 
-    function openPlayerView(ep) {
+    /* === ABRIR REPRODUCTOR 100% PANTALLA COMPLETA === */
+    function launchEpisode(ep) {
       currentEp = ep;
       isPlaying = true;
 
-      // Seleccionar automáticamente el mejor servidor siempre
-      const bestServer = getBestServer(ep.servers);
-      const bestIndex = ep.servers ? ep.servers.indexOf(bestServer) : 0;
-      currentServerIndex = bestIndex >= 0 ? bestIndex : 0;
+      // Selección automática transparente del mejor servidor (Morencius / Hyper)
+      const bestUrl = pickBestServer(ep.servers);
+      document.getElementById('cinema-frame').src = bestUrl;
 
-      document.getElementById('hud-ep-tag').textContent = `TEMPORADA ${ep.season} : EPISODIO ${ep.episode}`;
-      document.getElementById('hud-ep-title').textContent = ep.title;
-      document.getElementById('hud-server-info').textContent = `⚡ Servidor Óptimo: ${bestServer.server} (${bestServer.language.split(' ')[0]})`;
-
-      // Renderizar servidores en el HUD con el mejor seleccionado por defecto
-      const serversBox = document.getElementById('hud-servers');
-      serversBox.innerHTML = '';
-
-      if (ep.servers && ep.servers.length > 0) {
-        ep.servers.forEach((srv, idx) => {
-          const btn = document.createElement('button');
-          btn.className = `server-tag-btn ${idx === currentServerIndex ? 'active' : ''}`;
-          btn.textContent = `${srv.language.split(' ')[0]} (${srv.server})`;
-          btn.onclick = () => {
-            currentServerIndex = idx;
-            document.querySelectorAll('.server-tag-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            document.getElementById('cinema-frame').src = srv.embed_url;
-            document.getElementById('hud-server-info').textContent = `⚡ Servidor: ${srv.server}`;
-          };
-          serversBox.appendChild(btn);
-        });
-      }
-
-      // Cargar el mejor servidor directamente
-      document.getElementById('cinema-frame').src = bestServer ? bestServer.embed_url : "";
-
+      // Ocultar catálogo y activar pantalla completa
       document.getElementById('catalog-view').style.display = 'none';
       document.getElementById('player-view').classList.add('active');
 
-      showHudBriefly();
+      showHudTemp();
       scheduleAutoPlay();
     }
 
@@ -526,7 +426,7 @@
       document.getElementById('cinema-frame').src = '';
       document.getElementById('catalog-view').style.display = 'block';
 
-      if (autoPlayInterval) clearTimeout(autoPlayInterval);
+      if (autoPlayTimer) clearTimeout(autoPlayTimer);
       setFocus(1, currentCol);
     }
 
@@ -538,7 +438,7 @@
         if (next.season !== currentSeason) {
           selectSeason(next.season);
         }
-        openPlayerView(next);
+        launchEpisode(next);
       } else {
         alert("¡Has llegado al final de la serie!");
         closePlayerView();
@@ -546,7 +446,7 @@
     }
 
     function scheduleAutoPlay() {
-      if (autoPlayInterval) clearTimeout(autoPlayInterval);
+      if (autoPlayTimer) clearTimeout(autoPlayTimer);
 
       window.addEventListener('message', (e) => {
         if (!e.data) return;
@@ -556,37 +456,39 @@
         }
       });
 
-      // Auto-pasar tras la duración estándar de 43 minutos
-      autoPlayInterval = setTimeout(() => {
+      // Auto-reproducir tras duración estándar
+      autoPlayTimer = setTimeout(() => {
         playNextEpisode();
       }, 43 * 60 * 1000);
     }
 
-    function showHudBriefly() {
-      const pView = document.getElementById('player-view');
-      pView.classList.add('show-hud');
-      if (hudTimeout) clearTimeout(hudTimeout);
-      hudTimeout = setTimeout(() => {
-        pView.classList.remove('show-hud');
-      }, 4500);
+    function showHudTemp() {
+      const hud = document.getElementById('tv-hud');
+      hud.classList.add('visible');
+      if (hudTimer) clearTimeout(hudTimer);
+      hudTimer = setTimeout(() => {
+        hud.classList.remove('visible');
+      }, 3500);
     }
 
+    /* === NAVEGACIÓN D-PAD CONTROL REMOTO === */
     function setupDpadController() {
       window.addEventListener('keydown', (e) => {
         if (isPlaying) {
+          // Tecla Atrás en control remoto
           if (e.key === 'Back' || e.key === 'Escape' || e.key === 'BrowserBack') {
             closePlayerView();
             e.preventDefault();
             return;
           }
 
-          showHudBriefly();
+          showHudTemp();
 
-          if (e.key === 'ArrowRight') {
-            document.getElementById('btn-exit-player').focus();
+          if (e.key === 'ArrowLeft') {
+            document.getElementById('btn-hud-next').focus();
             e.preventDefault();
-          } else if (e.key === 'ArrowLeft') {
-            document.getElementById('btn-next-ep').focus();
+          } else if (e.key === 'ArrowRight') {
+            document.getElementById('btn-hud-exit').focus();
             e.preventDefault();
           } else if (e.key === 'Enter') {
             if (document.activeElement && document.activeElement.click) {
