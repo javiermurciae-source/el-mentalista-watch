@@ -414,7 +414,6 @@
     let countdownInterval = null;
     let countdownSeconds = 5;
     let isCountdownActive = false;
-    let fallbackAutoNextTimer = null;
 
     const SERVER_PRIORITY = [
       "hyper",
@@ -449,9 +448,6 @@
 
         setupDpadController();
         updateFocusUI();
-
-        // Monitoreo continuo del iframe para detectar fin de video
-        initIframeListener();
       } catch (e) {
         console.error("Error cargando episodios:", e);
       }
@@ -531,21 +527,11 @@
         if (playerEl.requestFullscreen) playerEl.requestFullscreen();
         else if (playerEl.webkitRequestFullscreen) playerEl.webkitRequestFullscreen();
       } catch (err) {}
-
-      showHudTemp();
-
-      // Temporizador inteligente: duración exacta de un capítulo de TV (~42 min)
-      // Dispara automáticamente la cuenta de 5 segundos
-      if (fallbackAutoNextTimer) clearTimeout(fallbackAutoNextTimer);
-      fallbackAutoNextTimer = setTimeout(() => {
-        triggerNextCountdown(5);
-      }, 42 * 60 * 1000);
     }
 
     function closePlayerView() {
       isPlaying = false;
       cancelNextCountdown();
-      if (fallbackAutoNextTimer) clearTimeout(fallbackAutoNextTimer);
 
       const playerEl = document.getElementById('player-view');
       playerEl.classList.remove('active');
@@ -558,21 +544,6 @@
       } catch (e) {}
 
       setFocus(1, currentCol);
-    }
-
-    /* === DETECCIÓN ROBUSTA DE FIN DE EPISODIO === */
-    function initIframeListener() {
-      window.addEventListener('message', (event) => {
-        if (!isPlaying || isCountdownActive) return;
-        try {
-          const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-          if (!data) return;
-          // Eventos específicos de reproductores HTML5 / JW / VideoJS
-          if (data.event === 'ended' || data.type === 'ended' || data.action === 'ended' || data === 'ended') {
-            triggerNextCountdown(5);
-          }
-        } catch (e) {}
-      });
     }
 
     /* === CUENTA REGRESIVA DE 5 SEGUNDOS GARANTIZADA === */
@@ -668,27 +639,29 @@
             return;
           }
 
-          // Mostrar HUD al presionar cualquier tecla direccional o OK
-          showHudTemp();
+          const hud = document.getElementById('tv-hud');
+          const isHudVisible = hud.classList.contains('visible');
 
           if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+            showHudTemp();
             document.getElementById('hud-btn-exit').focus();
             e.preventDefault();
             return;
           }
 
           if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            showHudTemp();
             document.getElementById('hud-btn-next').focus();
             e.preventDefault();
             return;
           }
 
           if (e.key === 'Enter' || e.key === 'Ok') {
-            if (document.activeElement && (document.activeElement.id === 'hud-btn-next' || document.activeElement.id === 'hud-btn-exit')) {
+            if (isHudVisible && document.activeElement && (document.activeElement.id === 'hud-btn-next' || document.activeElement.id === 'hud-btn-exit')) {
               document.activeElement.click();
             } else {
-              // Si no tiene foco en el HUD, el botón OK activa el botón Siguiente directamente
-              triggerNextCountdown(5);
+              // Si la barra está oculta, el primer OK solo la muestra y enfoca el botón sin saltar
+              showHudTemp(true);
             }
             e.preventDefault();
             return;
