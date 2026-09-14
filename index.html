@@ -410,10 +410,23 @@
       </div>
     </div>
 
-    <iframe id="cinema-frame" class="video-full-frame" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    <iframe id="cinema-frame" class="video-full-frame" sandbox="allow-scripts allow-same-origin allow-presentation" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>
   </div>
 
   <script>
+    // Bloqueador de popups y redirecciones abusivas de reproductores externos
+    window.open = function() {
+      console.warn("🛡️ Redirección/Popup bloqueado por Nix-on-Droid Player");
+      return null;
+    };
+    window.addEventListener('beforeunload', function(e) {
+      if (isPlaying) {
+        // Evitar que un iframe fuerce la salida o redirección de la página principal
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+
     let allEpisodes = [];
     let currentSeason = 1;
     let currentEp = null;
