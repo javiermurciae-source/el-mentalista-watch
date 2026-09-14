@@ -723,8 +723,11 @@
       document.querySelectorAll('.season-btn').forEach((btn, idx) => {
         btn.classList.toggle('selected', idx + 1 === seasonNum);
       });
-      document.getElementById('episodes-title').textContent = `🎬 Episodios Temporada ${seasonNum}:`;
+      const filtered = allEpisodes.filter(e => e.season === seasonNum);
+      document.getElementById('episodes-title').textContent = `🎬 Episodios Temporada ${seasonNum} (${filtered.length} Capítulos):`;
       renderEpisodes();
+      const epWrapper = document.getElementById('episodes-row').closest('.row-scroll-wrapper');
+      if (epWrapper) epWrapper.scrollTo({ left: 0, behavior: 'smooth' });
     }
 
     function renderEpisodes() {
