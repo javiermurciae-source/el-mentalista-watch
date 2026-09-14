@@ -7642,5 +7642,39 @@
         "raw_url": "https://tungtungsahur.cuevana3l.pro/?v=aHR0cHM6Ly92aWRhcGkueHl6L2VtYmVkL3R2LzU5MjAvNy8xMg=="
       }
     ]
+  },
+  {
+    "season": 7,
+    "episode": 13,
+    "title": "Orquídeas blancas (Final de Serie)",
+    "overview": "Jane y Lisbon deciden dar el gran paso y casarse, pero sus planes se ven amenazados cuando un asesino sediento de venganza regresa para intentar destruir su felicidad.",
+    "poster": "https://image.tmdb.org/t/p/w1280/tE6WZnyyS6HI39sh24wZWIeNmd5.jpg",
+    "url": "https://cuevana3l.pro/serie/el-mentalista/episodio-7x13",
+    "servers": [
+      {
+        "language": "Multilenguaje [CC] Premiere",
+        "server": "Servidor Death Star (VidLink)",
+        "embed_url": "https://vidlink.pro/tv/5920/7/13?sub_label=Spanish&primaryColor=ffffff&secondaryColor=ffffff&iconColor=ffffff&icons=default&player=jw&title=false&poster=true&autoplay=true",
+        "raw_url": ""
+      },
+      {
+        "language": "Multilenguaje [CC] Premiere",
+        "server": "Servidor Trinity (Videasy)",
+        "embed_url": "https://player.videasy.net/tv/5920/7/13",
+        "raw_url": ""
+      },
+      {
+        "language": "Multilenguaje [CC] Premiere",
+        "server": "Servidor Goldmember (VSEmbed)",
+        "embed_url": "https://vsembed.ru/embed/tv?tmdb=5920&season=7&episode=13&ds_lang=es",
+        "raw_url": ""
+      },
+      {
+        "language": "Multilenguaje [CC] Premiere",
+        "server": "Servidor Mahoutokoro",
+        "embed_url": "https://vidapi.xyz/embed/tv/5920/7/13",
+        "raw_url": ""
+      }
+    ]
   }
 ]
