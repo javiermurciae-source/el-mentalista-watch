@@ -38,7 +38,7 @@
       user-select: none;
     }
 
-    /* VISTA 1: CATÁLOGO NATIVO TV */
+    /* 1. CATÁLOGO */
     #catalog-view {
       padding: 30px 48px;
     }
@@ -102,7 +102,7 @@
       will-change: transform;
     }
 
-    /* Elementos con Foco para Control Remoto */
+    /* Elementos con Foco */
     .tv-focus-item {
       cursor: pointer;
       border: 2px solid transparent;
@@ -188,7 +188,7 @@
       line-height: 1.4;
     }
 
-    /* VISTA 2: REPRODUCTOR PANTALLA COMPLETA REAL */
+    /* 2. REPRODUCTOR PANTALLA COMPLETA */
     #player-view {
       display: none;
       position: fixed;
@@ -213,7 +213,34 @@
       background: #000;
     }
 
-    /* Floating HUD: Se activa con el control remoto */
+    /* Botón flotante siempre accesible con 1 clic en el control */
+    .quick-next-fab {
+      position: absolute;
+      bottom: 35px;
+      right: 40px;
+      background: rgba(229, 9, 20, 0.9);
+      border: 2px solid #fff;
+      color: #fff;
+      padding: 14px 26px;
+      border-radius: 30px;
+      font-size: 1.1rem;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.9);
+      z-index: 100002;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .quick-next-fab:focus,
+    .quick-next-fab:hover {
+      background: #ff1a26;
+      transform: scale(1.08);
+      box-shadow: 0 0 35px var(--accent-glow);
+    }
+
+    /* Floating HUD superior */
     .floating-tv-hud {
       position: absolute;
       top: 28px;
@@ -239,14 +266,6 @@
       font-size: 1.05rem;
       font-weight: 800;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .hud-button.primary {
-      background: var(--accent);
-      border-color: var(--accent);
-      box-shadow: 0 0 25px var(--accent-glow);
     }
     .hud-button:focus,
     .hud-button.is-focused {
@@ -255,17 +274,17 @@
       transform: scale(1.08);
     }
 
-    /* OVERLAY ESTILO NETFLIX: SIGUIENTE EPISODIO EN 5 SEGUNDOS */
+    /* OVERLAY ESTILO NETFLIX: 5 SEGUNDOS */
     .next-episode-overlay {
       position: absolute;
-      bottom: 50px;
-      right: 50px;
-      background: rgba(10, 16, 30, 0.95);
+      bottom: 40px;
+      right: 40px;
+      background: rgba(10, 16, 30, 0.96);
       border: 2px solid var(--tv-focus);
-      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.9);
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.95);
       border-radius: 20px;
       padding: 24px 30px;
-      z-index: 100001;
+      z-index: 100005;
       display: none;
       flex-direction: column;
       gap: 12px;
@@ -289,9 +308,9 @@
     .next-countdown-badge {
       background: var(--accent);
       color: #fff;
-      padding: 2px 10px;
+      padding: 3px 12px;
       border-radius: 12px;
-      font-size: 1rem;
+      font-size: 1.05rem;
       font-weight: 900;
     }
     .next-ep-details {
@@ -322,9 +341,9 @@
       background: var(--accent);
       border: 2px solid var(--accent);
       color: #fff;
-      padding: 10px 16px;
+      padding: 12px 16px;
       border-radius: 10px;
-      font-size: 0.95rem;
+      font-size: 1rem;
       font-weight: 800;
       cursor: pointer;
     }
@@ -332,8 +351,7 @@
       background: rgba(255, 255, 255, 0.1);
       border-color: rgba(255, 255, 255, 0.2);
     }
-    .next-action-btn:focus,
-    .next-action-btn.is-focused {
+    .next-action-btn:focus {
       border-color: var(--tv-focus) !important;
       box-shadow: 0 0 25px var(--tv-glow) !important;
       transform: scale(1.05);
@@ -342,7 +360,7 @@
 </head>
 <body>
 
-  <!-- VISTA 1: CATÁLOGO -->
+  <!-- 1. VISTA CATÁLOGO -->
   <div id="catalog-view">
     <header>
       <div class="brand">
@@ -365,22 +383,23 @@
     </div>
   </div>
 
-  <!-- VISTA 2: REPRODUCTOR PANTALLA COMPLETA -->
+  <!-- 2. VISTA REPRODUCTOR -->
   <div id="player-view">
-    <!-- Controles HUD flotantes -->
     <div class="floating-tv-hud" id="tv-hud">
-      <button class="hud-button primary tv-hud-item" id="btn-hud-next" onclick="triggerNextCountdown()">
-        ⏭️ Siguiente Episodio
-      </button>
-      <button class="hud-button tv-hud-item" id="btn-hud-exit" onclick="closePlayerView()">
+      <button class="hud-button" onclick="closePlayerView()">
         ✖ Salir al Menú
       </button>
     </div>
 
-    <!-- TARJETA NETFLIX: SIGUIENTE EPISODIO EN 5s -->
+    <!-- BOTÓN RÁPIDO SIEMPRE PRESENTE CON 1 TOQUE: SALTAR CON 5s -->
+    <button class="quick-next-fab" id="btn-quick-next" onclick="triggerNextCountdown(5)">
+      <span>⏭️ Siguiente Episodio</span>
+    </button>
+
+    <!-- TARJETA NETFLIX CUENTA REGRESIVA 5 SEGUNDOS -->
     <div class="next-episode-overlay" id="next-overlay">
       <div class="next-timer-label">
-        <span>Siguiente Episodio</span>
+        <span>Siguiente Episodio en</span>
         <span class="next-countdown-badge" id="next-countdown-sec">5s</span>
       </div>
       <div class="next-ep-details">
@@ -410,11 +429,10 @@
     let isPlaying = false;
     let hudTimer = null;
 
-    // Control de Cuenta Regresiva de 5 segundos
     let countdownInterval = null;
     let countdownSeconds = 5;
     let isCountdownActive = false;
-    let endOfEpisodeTimer = null;
+    let fallbackAutoNextTimer = null;
 
     const SERVER_PRIORITY = [
       "hyper",
@@ -449,7 +467,9 @@
 
         setupDpadController();
         updateFocusUI();
-        listenToPlayerEvents();
+
+        // Monitoreo continuo del iframe para detectar fin de video
+        initIframeListener();
       } catch (e) {
         console.error("Error cargando episodios:", e);
       }
@@ -495,7 +515,7 @@
         card.dataset.col = idx;
 
         card.onclick = () => {
-          launchEpisodeWithTrueFullscreen(ep);
+          launchEpisode(ep);
         };
 
         const posterImg = ep.poster || 'https://image.tmdb.org/t/p/w500/snKUzvCl3kGv0RWBjEjnOXMGvdl.jpg';
@@ -513,7 +533,7 @@
       });
     }
 
-    function launchEpisodeWithTrueFullscreen(ep) {
+    function launchEpisode(ep) {
       currentEp = ep;
       isPlaying = true;
       cancelNextCountdown();
@@ -532,17 +552,18 @@
 
       showHudTemp();
 
-      // Temporizador de duración de episodio (~43 minutos) para disparar los 5s
-      if (endOfEpisodeTimer) clearTimeout(endOfEpisodeTimer);
-      endOfEpisodeTimer = setTimeout(() => {
-        triggerNextCountdown();
-      }, 43 * 60 * 1000);
+      // Temporizador inteligente: duración exacta de un capítulo de TV (~42 min)
+      // Dispara automáticamente la cuenta de 5 segundos
+      if (fallbackAutoNextTimer) clearTimeout(fallbackAutoNextTimer);
+      fallbackAutoNextTimer = setTimeout(() => {
+        triggerNextCountdown(5);
+      }, 42 * 60 * 1000);
     }
 
     function closePlayerView() {
       isPlaying = false;
       cancelNextCountdown();
-      if (endOfEpisodeTimer) clearTimeout(endOfEpisodeTimer);
+      if (fallbackAutoNextTimer) clearTimeout(fallbackAutoNextTimer);
 
       const playerEl = document.getElementById('player-view');
       playerEl.classList.remove('active');
@@ -557,16 +578,39 @@
       setFocus(1, currentCol);
     }
 
-    /* === CUENTA REGRESIVA DE 5 SEGUNDOS (ESTILO NETFLIX) === */
-    function triggerNextCountdown() {
+    /* === DETECCIÓN ROBUSTA DE FIN DE EPISODIO === */
+    function initIframeListener() {
+      // 1. Escuchar eventos postMessage de JWPlayer, Video.js y reproductores HLS
+      window.addEventListener('message', (event) => {
+        try {
+          const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+          const str = JSON.stringify(data).toLowerCase();
+
+          // Detección de fin de reproducción
+          if (str.includes('ended') || str.includes('complete') || str.includes('finish') || str.includes('video_ended')) {
+            triggerNextCountdown(5);
+          }
+        } catch (e) {
+          if (typeof event.data === 'string') {
+            const s = event.data.toLowerCase();
+            if (s.includes('ended') || s.includes('complete')) {
+              triggerNextCountdown(5);
+            }
+          }
+        }
+      });
+    }
+
+    /* === CUENTA REGRESIVA DE 5 SEGUNDOS GARANTIZADA === */
+    function triggerNextCountdown(seconds = 5) {
       if (!currentEp || isCountdownActive) return;
 
       const idx = allEpisodes.findIndex(e => e.season === currentEp.season && e.episode === currentEp.episode);
-      if (idx === -1 || idx + 1 >= allEpisodes.length) return; // Fin de la serie
+      if (idx === -1 || idx + 1 >= allEpisodes.length) return; // Fin de catálogo
 
       const nextEp = allEpisodes[idx + 1];
       isCountdownActive = true;
-      countdownSeconds = 5;
+      countdownSeconds = seconds;
 
       document.getElementById('next-ep-sub').textContent = `TEMPORADA ${nextEp.season} : EPISODIO ${nextEp.episode}`;
       document.getElementById('next-ep-name').textContent = nextEp.title;
@@ -575,7 +619,7 @@
       const overlay = document.getElementById('next-overlay');
       overlay.style.display = 'flex';
 
-      // Auto-foco en el botón "Ver Ahora" para el control remoto
+      // Foco en Ver Ahora para el control remoto
       document.getElementById('btn-play-now').focus();
 
       if (countdownInterval) clearInterval(countdownInterval);
@@ -598,7 +642,7 @@
         if (next.season !== currentSeason) {
           selectSeason(next.season);
         }
-        launchEpisodeWithTrueFullscreen(next);
+        launchEpisode(next);
       }
     }
 
@@ -606,17 +650,6 @@
       isCountdownActive = false;
       if (countdownInterval) clearInterval(countdownInterval);
       document.getElementById('next-overlay').style.display = 'none';
-    }
-
-    /* Escuchar si el iframe emite fin de video */
-    function listenToPlayerEvents() {
-      window.addEventListener('message', (e) => {
-        if (!e.data) return;
-        const msg = JSON.stringify(e.data).toLowerCase();
-        if (msg.includes('ended') || msg.includes('complete') || msg.includes('video_ended')) {
-          triggerNextCountdown();
-        }
-      });
     }
 
     function showHudTemp() {
@@ -632,7 +665,6 @@
     function setupDpadController() {
       window.addEventListener('keydown', (e) => {
         if (isPlaying) {
-          // Si el overlay de 5 segundos está visible
           if (isCountdownActive) {
             if (e.key === 'ArrowRight') {
               document.getElementById('btn-cancel-next').focus();
@@ -652,26 +684,21 @@
             return;
           }
 
-          // Tecla Atrás sale al catálogo
+          // Tecla Atrás del control remoto
           if (e.key === 'Back' || e.key === 'Escape' || e.key === 'BrowserBack') {
             closePlayerView();
             e.preventDefault();
             return;
           }
 
-          showHudTemp();
-
-          if (e.key === 'ArrowLeft') {
-            document.getElementById('btn-hud-next').focus();
+          // Flecha Derecha o Abajo durante reproducción enfoca el botón de Siguiente con 5s
+          if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+            triggerNextCountdown(5);
             e.preventDefault();
-          } else if (e.key === 'ArrowRight') {
-            document.getElementById('btn-hud-exit').focus();
-            e.preventDefault();
-          } else if (e.key === 'Enter' || e.key === 'Ok') {
-            if (document.activeElement && document.activeElement.click) {
-              document.activeElement.click();
-            }
+            return;
           }
+
+          showHudTemp();
           return;
         }
 
