@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>El Mentalista - Jam & Watch Party en Vivo</title>
+  <title>El Mentalista - Watch Party & Jam en Vivo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <!-- GunDB: Base de datos distribuida en tiempo real ultra-rápida y sin servidor -->
+  <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
   <style>
     :root {
       --bg: #080c16;
@@ -92,60 +93,22 @@
     }
     .play-btn-big svg { width: 28px; height: 28px; fill: #fff; margin-left: 4px; }
 
-    /* Barra de Control de Sincronización Estricta (Sync Control) */
+    /* Barra de Sincronización */
     .sync-controller-bar {
-      background: #0d1322;
-      border-top: 1px solid var(--border);
-      padding: 12px 18px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      background: #0d1322; border-top: 1px solid var(--border); padding: 12px 18px;
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
     }
-    .sync-status-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .sync-indicator {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #64748b;
-    }
-    .sync-indicator.online {
-      background: #10b981;
-      box-shadow: 0 0 10px #10b981;
-    }
-    .sync-timer-label {
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: #38bdf8;
-      font-variant-numeric: tabular-nums;
-    }
-    .sync-actions-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+    .sync-status-group { display: flex; align-items: center; gap: 10px; }
+    .sync-indicator { width: 10px; height: 10px; border-radius: 50%; background: #64748b; }
+    .sync-indicator.online { background: #10b981; box-shadow: 0 0 10px #10b981; }
+    .sync-timer-label { font-size: 0.88rem; font-weight: 700; color: #38bdf8; font-variant-numeric: tabular-nums; }
+    .sync-actions-group { display: flex; align-items: center; gap: 8px; }
     .sync-btn {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
+      background: rgba(255, 255, 255, 0.08); border: 1px solid var(--border); color: var(--text);
+      padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
     }
     .sync-btn:hover { background: #1e293b; }
-    .sync-btn.pulse {
-      background: var(--jam-color);
-      border-color: var(--jam-color);
-      color: #fff;
-    }
+    .sync-btn.primary { background: var(--jam-color); border-color: var(--jam-color); color: #fff; }
 
     .player-meta {
       padding: 16px 20px; background: var(--card-bg); border-top: 1px solid var(--border);
@@ -162,7 +125,7 @@
     .server-chip:hover { background: var(--card-hover); border-color: #3b82f6; }
     .server-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 0 12px var(--accent-glow); }
 
-    /* Jam Sidebar */
+    /* Jam Sidebar & Chat */
     .jam-sidebar {
       background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
       display: none; flex-direction: column; height: 100%; min-height: 480px; overflow: hidden;
@@ -185,7 +148,9 @@
     }
     .chat-msg {
       background: rgba(255, 255, 255, 0.04); padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; border-left: 3px solid var(--jam-color);
+      animation: fadeIn 0.2s ease-in;
     }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
     .chat-msg.mine { border-left-color: var(--accent); background: rgba(229, 9, 20, 0.07); }
     .chat-meta { display: flex; justify-content: space-between; margin-bottom: 3px; font-size: 0.72rem; color: var(--text-muted); }
     .chat-user { font-weight: 700; color: #e2e8f0; }
@@ -204,7 +169,7 @@
       background: #1e1b4b; border: 1px solid #6366f1; color: #e0e7ff; padding: 10px 16px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;
     }
 
-    /* Countdown Modal para Play Sincronizado */
+    /* Countdown Modal */
     .countdown-overlay {
       position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px);
       z-index: 1000; display: none; align-items: center; justify-content: center; flex-direction: column;
@@ -250,7 +215,7 @@
 </head>
 <body>
   <div class="countdown-overlay" id="countdown-modal">
-    <div style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 10px;" id="countdown-label">Sincronizando inicio con la sala...</div>
+    <div style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 10px;">¡Arrancando reproducción al unísono!</div>
     <div class="countdown-number" id="countdown-timer">3</div>
   </div>
 
@@ -283,23 +248,23 @@
               <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             </div>
             <h3 style="margin-bottom: 6px;">Selecciona un episodio</h3>
-            <p style="font-size: 0.85rem;">En modo Jam, el arranque y el capítulo se coordinan con todos tus amigos.</p>
+            <p style="font-size: 0.85rem;">En modo Jam, el arranque, el capítulo y el chat se sincronizan en vivo.</p>
           </div>
           <iframe id="video-frame" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" style="display: none;"></iframe>
         </div>
 
-        <!-- Barra de Control de Sincronización Estricta -->
+        <!-- Barra de Sincronización Estricta -->
         <div class="sync-controller-bar" id="sync-bar">
           <div class="sync-status-group">
-            <div class="sync-indicator" id="sync-dot"></div>
-            <span style="font-size: 0.85rem; font-weight: 600;" id="sync-peer-count">Modo Solitario</span>
+            <div class="sync-indicator online" id="sync-dot"></div>
+            <span style="font-size: 0.85rem; font-weight: 600;" id="sync-peer-count">Sala Activa</span>
             <span class="sync-timer-label" id="playback-timer">⏱️ 00:00:00</span>
           </div>
           <div class="sync-actions-group">
-            <button class="sync-btn" onclick="triggerPlaySync()" title="Iniciar reproducción en simultáneo">
+            <button class="sync-btn primary" onclick="triggerPlaySync()" title="Iniciar reproducción al mismo tiempo">
               ⚡ Play Sincronizado (3s)
             </button>
-            <button class="sync-btn" onclick="resyncCurrentPlayer()" title="Reiniciar servidor a la vez">
+            <button class="sync-btn" onclick="resyncCurrentPlayer()" title="Recargar servidor a la vez">
               🔄 Recargar Juntos
             </button>
           </div>
@@ -315,19 +280,19 @@
         </div>
       </div>
 
-      <!-- Jam Sidebar -->
+      <!-- Jam Sidebar & Chat -->
       <div class="jam-sidebar" id="jam-sidebar">
         <div class="jam-header">
           <div class="jam-title"><span>👥</span> Jam / Sala de Fiesta</div>
-          <div class="jam-room-badge" id="jam-status-badge">● Conectado</div>
+          <div class="jam-room-badge" id="jam-status-badge">● Conectado en Nube</div>
         </div>
         <div class="jam-sync-banner">
-          <span id="jam-sync-info">Sincronización activa</span>
+          <span id="jam-sync-info">Sincronización en vivo</span>
         </div>
         <div class="jam-chat-list" id="chat-list">
           <div class="chat-msg">
             <div class="chat-meta"><span class="chat-user">Sistema</span><span>Ahora</span></div>
-            <div class="chat-text">¡Sala activa! Usa el botón 'Play Sincronizado' para arrancar el episodio exactamente al mismo tiempo con tus amigos.</div>
+            <div class="chat-text">¡Sala lista! Los mensajes y el episodio se sincronizan al instante en la nube para todos.</div>
           </div>
         </div>
         <div class="jam-input-box">
@@ -350,20 +315,20 @@
     let currentEp = null;
     let currentServer = null;
 
-    // Control de tiempo de sesión compartido
+    // Control de tiempo de reproducción
     let playStartTimestamp = null;
     let timerInterval = null;
 
-    // Configuración Jam P2P
+    // Configuración Jam con GunDB (Cloud Relay Mesh)
+    let gun = null;
+    let roomRef = null;
     let jamActive = false;
-    let peer = null;
-    let peerConnections = [];
-    let myPeerId = null;
-    let isHost = false;
+    let jamRoomId = "mentalista-amigos";
     let myUserName = "Camilo";
+    const seenMessages = new Set();
 
     const urlParams = new URLSearchParams(window.location.search);
-    const joinRoomId = urlParams.get('room');
+    if (urlParams.has('room')) jamRoomId = urlParams.get('room');
     if (urlParams.has('user')) myUserName = urlParams.get('user');
 
     async function loadData() {
@@ -373,8 +338,9 @@
         setupSeasons();
         selectSeason(1);
 
-        if (joinRoomId) {
-          initJamP2P(joinRoomId);
+        // Si la URL viene con sala, encender Jam automáticamente
+        if (urlParams.has('room')) {
+          activateJamUI();
         }
       } catch (e) {
         console.error("Error al cargar episodios:", e);
@@ -460,7 +426,16 @@
           chip.classList.add('active');
           currentServer = srv;
           switchServer(srv.embed_url);
-          if (jamActive) broadcastJamAction({ type: 'sync_server', season: ep.season, episode: ep.episode, server_url: srv.embed_url, server_name: srv.server });
+          if (jamActive && roomRef) {
+            roomRef.get('state').put({
+              action: 'change_server',
+              season: ep.season,
+              episode: ep.episode,
+              server_url: srv.embed_url,
+              server_name: srv.server,
+              time: Date.now()
+            });
+          }
         };
         serversContainer.appendChild(chip);
       });
@@ -468,13 +443,14 @@
       switchServer(activeServer.embed_url);
       startPlaybackTimer();
 
-      if (jamActive && broadcastToJam) {
-        broadcastJamAction({
-          type: 'sync_ep',
+      if (jamActive && broadcastToJam && roomRef) {
+        roomRef.get('state').put({
+          action: 'change_episode',
           season: ep.season,
           episode: ep.episode,
           server_url: activeServer.embed_url,
-          server_name: activeServer.server
+          server_name: activeServer.server,
+          time: Date.now()
         });
       }
 
@@ -486,7 +462,7 @@
       const frame = document.getElementById('video-frame');
       placeholder.style.display = 'none';
       frame.style.display = 'block';
-      frame.src = url;
+      if (frame.src !== url) frame.src = url;
     }
 
     function startPlaybackTimer(baseStartTime = null) {
@@ -501,27 +477,28 @@
       }, 1000);
     }
 
-    /* === SINCRONIZACIÓN ESTRICTA (COORDINATED COUNTDOWN) === */
+    /* === SINCRONIZACIÓN Y COUNTDOWN === */
     function triggerPlaySync() {
       if (!currentEp) {
         alert("Primero selecciona un episodio.");
         return;
       }
-      const syncTargetEpoch = Date.now() + 3000; // Iniciar en 3.0s exactos
+      const syncTargetEpoch = Date.now() + 3000;
       runCountdown(3);
 
-      if (jamActive) {
-        broadcastJamAction({
-          type: 'coordinated_start',
+      if (jamActive && roomRef) {
+        roomRef.get('state').put({
+          action: 'countdown_start',
           targetEpoch: syncTargetEpoch,
           season: currentEp.season,
           episode: currentEp.episode,
-          server_url: currentServer ? currentServer.embed_url : ""
+          server_url: currentServer ? currentServer.embed_url : "",
+          time: Date.now()
         });
       }
     }
 
-    function runCountdown(seconds, callback = null) {
+    function runCountdown(seconds) {
       const modal = document.getElementById('countdown-modal');
       const timerEl = document.getElementById('countdown-timer');
       modal.style.display = 'flex';
@@ -539,7 +516,6 @@
             switchServer(currentServer.embed_url);
             startPlaybackTimer();
           }
-          if (callback) callback();
         }
       }, 1000);
     }
@@ -548,141 +524,109 @@
       if (!currentServer) return;
       switchServer(currentServer.embed_url);
       startPlaybackTimer();
-      if (jamActive) {
-        broadcastJamAction({
-          type: 'resync_reload',
-          season: currentEp.season,
-          episode: currentEp.episode,
-          server_url: currentServer.embed_url
+      if (jamActive && roomRef) {
+        roomRef.get('state').put({
+          action: 'resync_reload',
+          time: Date.now()
         });
       }
     }
 
-    /* === WATCH PARTY P2P === */
+    /* === WATCH PARTY CLOUD (GUNDB DISTRIBUTED REALTIME) === */
     function toggleJamMode() {
       if (!jamActive) {
-        initJamP2P();
+        activateJamUI();
       } else {
         deactivateJamUI();
       }
     }
 
-    function initJamP2P(targetRoomId = null) {
+    function activateJamUI() {
       jamActive = true;
       document.getElementById('theater').classList.add('jam-active');
       document.getElementById('btn-jam-toggle').classList.add('active');
       document.getElementById('jam-btn-text').textContent = 'Fiesta Activa';
 
-      peer = new Peer();
+      // Enlace para compartir
+      const baseHref = window.location.href.split('?')[0];
+      const shareUrl = `${baseHref}?room=${jamRoomId}&user=Amigo`;
+      document.getElementById('jam-share-link').textContent = shareUrl;
+      document.getElementById('jam-share-bar').style.display = 'flex';
 
-      peer.on('open', (id) => {
-        myPeerId = id;
-        isHost = !targetRoomId;
-        const roomId = targetRoomId || id;
-        const baseHref = window.location.href.split('?')[0];
-        const shareUrl = `${baseHref}?room=${roomId}&user=Amigo`;
-        document.getElementById('jam-share-link').textContent = shareUrl;
-        document.getElementById('jam-share-bar').style.display = 'flex';
+      // Conexión GunDB con Relays públicos redundantes de alta velocidad
+      if (!gun) {
+        gun = Gun([
+          'https://gun-manhattan.herokuapp.com/gun',
+          'https://relay.peer.ooo/gun',
+          'https://gun-relay.scarmack.workers.dev/gun'
+        ]);
+      }
 
-        updatePeerCountUI();
+      roomRef = gun.get('el_mentalista_v1').get(jamRoomId);
 
-        if (targetRoomId && targetRoomId !== id) {
-          const conn = peer.connect(targetRoomId);
-          setupConn(conn);
-        }
-      });
+      // Escuchar cambios de estado del reproductor
+      let lastActionTime = 0;
+      roomRef.get('state').on((state) => {
+        if (!state || state.time <= lastActionTime) return;
+        lastActionTime = state.time;
 
-      peer.on('connection', (conn) => {
-        setupConn(conn);
-        if (currentEp) {
-          conn.on('open', () => {
-            conn.send({
-              type: 'sync_init',
-              season: currentEp.season,
-              episode: currentEp.episode,
-              server_url: currentServer ? currentServer.embed_url : "",
-              server_name: currentServer ? currentServer.server : "",
-              playStartTimestamp: playStartTimestamp
-            });
-          });
-        }
-      });
-    }
-
-    function setupConn(conn) {
-      peerConnections.push(conn);
-      updatePeerCountUI();
-
-      conn.on('data', (data) => {
-        handleIncomingJamAction(data);
-      });
-
-      conn.on('close', () => {
-        peerConnections = peerConnections.filter(c => c !== conn);
-        updatePeerCountUI();
-      });
-    }
-
-    function handleIncomingJamAction(data) {
-      if (data.type === 'sync_init' || data.type === 'sync_ep' || data.type === 'sync_server') {
-        const target = allEpisodes.find(e => e.season === data.season && e.episode === data.episode);
-        if (target) {
-          if (currentSeason !== target.season) selectSeason(target.season);
-          playEpisode(target, data.server_url, false);
-          document.getElementById('jam-sync-info').textContent = `T${data.season} E${data.episode} en sintonía conjunta`;
-          if (data.playStartTimestamp) {
-            startPlaybackTimer(data.playStartTimestamp);
+        if (state.action === 'change_episode' || state.action === 'change_server') {
+          const target = allEpisodes.find(e => e.season === state.season && e.episode === state.episode);
+          if (target) {
+            if (currentSeason !== target.season) selectSeason(target.season);
+            playEpisode(target, state.server_url, false);
+            document.getElementById('jam-sync-info').textContent = `T${state.season} E${state.episode} sincronizado en la fiesta`;
+          }
+        } else if (state.action === 'countdown_start') {
+          const target = allEpisodes.find(e => e.season === state.season && e.episode === state.episode);
+          if (target && (!currentEp || currentEp.season !== target.season || currentEp.episode !== target.episode)) {
+            if (currentSeason !== target.season) selectSeason(target.season);
+            playEpisode(target, state.server_url, false);
+          }
+          const delayMs = Math.max(0, state.targetEpoch - Date.now());
+          const seconds = Math.round(delayMs / 1000) || 1;
+          runCountdown(seconds);
+        } else if (state.action === 'resync_reload') {
+          if (currentServer) {
+            switchServer(currentServer.embed_url);
+            startPlaybackTimer();
           }
         }
-      } else if (data.type === 'coordinated_start') {
-        const target = allEpisodes.find(e => e.season === data.season && e.episode === data.episode);
-        if (target && (!currentEp || currentEp.season !== target.season || currentEp.episode !== target.episode)) {
-          if (currentSeason !== target.season) selectSeason(target.season);
-          playEpisode(target, data.server_url, false);
-        }
-        const delayMs = Math.max(0, data.targetEpoch - Date.now());
-        const seconds = Math.round(delayMs / 1000) || 1;
-        runCountdown(seconds);
-      } else if (data.type === 'resync_reload') {
-        if (currentServer) {
-          switchServer(currentServer.embed_url);
-          startPlaybackTimer();
-        }
-      } else if (data.type === 'chat') {
-        appendChatMessage(data.user, data.text, data.time, false);
-      }
-    }
-
-    function updatePeerCountUI() {
-      const dot = document.getElementById('sync-dot');
-      const countLabel = document.getElementById('sync-peer-count');
-      if (peerConnections.length > 0) {
-        dot.classList.add('online');
-        countLabel.textContent = `🟢 En línea: ${peerConnections.length + 1} amigos`;
-      } else if (jamActive) {
-        dot.classList.add('online');
-        countLabel.textContent = `🟢 Sala lista (esperando amigos)`;
-      } else {
-        dot.classList.remove('online');
-        countLabel.textContent = `Modo Solitario`;
-      }
-    }
-
-    function broadcastJamAction(payload) {
-      peerConnections.forEach(conn => {
-        if (conn.open) conn.send(payload);
       });
+
+      // Escuchar mensajes de chat en tiempo real
+      roomRef.get('chat').map().on((msg, id) => {
+        if (!msg || !msg.text || seenMessages.has(id)) return;
+        seenMessages.add(id);
+        const isMe = msg.user === myUserName;
+        appendChatMessage(msg.user, msg.text, msg.time, isMe);
+      });
+    }
+
+    function deactivateJamUI() {
+      jamActive = false;
+      document.getElementById('theater').classList.remove('jam-active');
+      document.getElementById('btn-jam-toggle').classList.remove('active');
+      document.getElementById('jam-btn-text').textContent = 'Crear Jam / Fiesta';
+      document.getElementById('jam-share-bar').style.display = 'none';
     }
 
     function sendChatMessage() {
       const input = document.getElementById('chat-input');
       const text = input.value.trim();
-      if (!text) return;
+      if (!text || !roomRef) return;
       input.value = '';
 
       const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      appendChatMessage(myUserName, text, nowTime, true);
-      broadcastJamAction({ type: 'chat', user: myUserName, text: text, time: nowTime });
+      const msgId = `${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+      
+      // Guardar en GunDB para que todos los clientes en la nube lo reciban instantáneamente
+      roomRef.get('chat').get(msgId).put({
+        user: myUserName,
+        text: text,
+        time: nowTime,
+        timestamp: Date.now()
+      });
     }
 
     function appendChatMessage(user, text, time, isMe) {
@@ -692,7 +636,7 @@
       div.innerHTML = `
         <div class="chat-meta">
           <span class="chat-user">${escapeHtml(user)}</span>
-          <span>${time}</span>
+          <span>${time || ''}</span>
         </div>
         <div class="chat-text">${escapeHtml(text)}</div>
       `;
@@ -703,22 +647,8 @@
     function copyJamLink() {
       const link = document.getElementById('jam-share-link').textContent;
       navigator.clipboard.writeText(link).then(() => {
-        alert("¡Enlace copiado al portapapeles! Envíalo a tus amigos.");
+        alert("¡Enlace copiado! Envíalo a tus amigos para que se unan.");
       });
-    }
-
-    function deactivateJamUI() {
-      jamActive = false;
-      document.getElementById('theater').classList.remove('jam-active');
-      document.getElementById('btn-jam-toggle').classList.remove('active');
-      document.getElementById('jam-btn-text').textContent = 'Crear Jam / Fiesta';
-      document.getElementById('jam-share-bar').style.display = 'none';
-      if (peer) {
-        peer.destroy();
-        peer = null;
-      }
-      peerConnections = [];
-      updatePeerCountUI();
     }
 
     function escapeHtml(text) {
