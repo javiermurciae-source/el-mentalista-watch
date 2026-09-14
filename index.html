@@ -213,33 +213,6 @@
       background: #000;
     }
 
-    /* Botón flotante siempre accesible con 1 clic en el control */
-    .quick-next-fab {
-      position: absolute;
-      bottom: 35px;
-      right: 40px;
-      background: rgba(229, 9, 20, 0.9);
-      border: 2px solid #fff;
-      color: #fff;
-      padding: 14px 26px;
-      border-radius: 30px;
-      font-size: 1.1rem;
-      font-weight: 900;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.9);
-      z-index: 100002;
-      transition: transform 0.2s, background 0.2s;
-    }
-    .quick-next-fab:focus,
-    .quick-next-fab:hover {
-      background: #ff1a26;
-      transform: scale(1.08);
-      box-shadow: 0 0 35px var(--accent-glow);
-    }
-
     /* Floating HUD superior */
     .floating-tv-hud {
       position: absolute;
@@ -390,11 +363,6 @@
         ✖ Salir al Menú
       </button>
     </div>
-
-    <!-- BOTÓN RÁPIDO SIEMPRE PRESENTE CON 1 TOQUE: SALTAR CON 5s -->
-    <button class="quick-next-fab" id="btn-quick-next" onclick="triggerNextCountdown(5)">
-      <span>⏭️ Siguiente Episodio</span>
-    </button>
 
     <!-- TARJETA NETFLIX CUENTA REGRESIVA 5 SEGUNDOS -->
     <div class="next-episode-overlay" id="next-overlay">
