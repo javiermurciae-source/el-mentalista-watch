@@ -8,16 +8,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #060913;
-      --surface: #0f172a;
+      --bg: #05070e;
+      --surface: #0b1120;
+      --card-bg: #111a2e;
       --accent: #e50914;
       --accent-glow: rgba(229, 9, 20, 0.6);
       --tv-focus: #38bdf8;
-      --tv-glow: rgba(56, 189, 248, 0.8);
+      --tv-glow: rgba(56, 189, 248, 0.85);
       --text: #f8fafc;
       --text-muted: #94a3b8;
       --gold: #f59e0b;
-      --border: rgba(255, 255, 255, 0.1);
+      --border: rgba(255, 255, 255, 0.08);
+      --green: #10b981;
     }
     * {
       box-sizing: border-box;
@@ -32,16 +34,17 @@
       font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
       min-height: 100vh;
       overflow-x: hidden;
-      padding-bottom: 80px;
+      padding: 24px 36px 60px 36px;
       user-select: none;
     }
 
+    /* Top Bar Compacto y Limpio */
     header {
-      background: rgba(6, 9, 19, 0.95);
-      padding: 14px 40px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
       border-bottom: 1px solid var(--border);
     }
     .brand {
@@ -63,197 +66,238 @@
     }
     .brand-title {
       font-weight: 900;
-      font-size: 1.4rem;
-      letter-spacing: -0.4px;
+      font-size: 1.5rem;
+      letter-spacing: -0.5px;
     }
-    .tv-controls-hint {
+    .autoplay-badge {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: var(--green);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 800;
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      font-weight: 700;
-    }
-    .tv-key-pill {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid var(--border);
-      padding: 4px 12px;
-      border-radius: 8px;
-      color: #fff;
-      font-weight: 800;
+      gap: 6px;
     }
 
-    .tv-container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 24px 40px;
-    }
-
-    /* Video Player */
-    .player-section {
+    /* Modal / Reproductor Cine en Pantalla Completa (Solo se abre al seleccionar episodio) */
+    .video-modal-overlay {
+      position: fixed;
+      inset: 0;
       background: #000;
-      border-radius: 20px;
-      overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.9);
-      border: 2px solid transparent;
-      margin-bottom: 28px;
-      position: relative;
+      z-index: 999;
+      display: none;
+      flex-direction: column;
     }
-    .video-viewport {
-      position: relative;
-      width: 100%;
-      padding-top: 56.25%; /* 16:9 */
-      background: #000;
+    .video-modal-overlay.active {
+      display: flex;
     }
-    .video-viewport iframe {
+    .modal-topbar {
       position: absolute;
       top: 0;
       left: 0;
+      right: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, transparent 100%);
+      padding: 16px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .video-modal-overlay:hover .modal-topbar,
+    .video-modal-overlay.show-hud .modal-topbar {
+      opacity: 1;
+    }
+    .modal-ep-info {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #fff;
+    }
+    .modal-controls-group {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .modal-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .modal-btn:hover, .modal-btn:focus {
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+    .iframe-cinema-box {
+      flex: 1;
       width: 100%;
       height: 100%;
       border: 0;
     }
 
-    /* Meta bar */
-    .player-details {
-      padding: 20px 28px;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
+    /* Notificación de Auto-Reproducción de Siguiente Episodio */
+    .next-ep-toast {
+      position: fixed;
+      bottom: 40px;
+      right: 40px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 2px solid var(--tv-focus);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+      border-radius: 16px;
+      padding: 18px 24px;
+      z-index: 1050;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 320px;
+      animation: slideUp 0.3s ease;
     }
-    .details-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
+    @keyframes slideUp {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
-    .current-title {
-      font-size: 1.6rem;
-      font-weight: 900;
-      letter-spacing: -0.4px;
-    }
-    .current-badge {
-      background: var(--accent);
-      color: #fff;
-      padding: 6px 14px;
-      border-radius: 8px;
+    .next-toast-header {
       font-size: 0.85rem;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-    .current-desc {
-      font-size: 1rem;
-      color: var(--text-muted);
-      line-height: 1.5;
-      margin-bottom: 20px;
-      max-width: 1050px;
-    }
-
-    /* Focus styling */
-    .tv-target {
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s, border-color 0.2s, background 0.2s;
-    }
-    .tv-target.tv-active-focus {
-      border-color: var(--tv-focus) !important;
-      box-shadow: 0 0 30px var(--tv-glow) !important;
-      transform: scale(1.08) !important;
-      z-index: 50 !important;
-    }
-
-    /* Action buttons & servers row */
-    .control-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-    .tv-button {
-      background: rgba(255, 255, 255, 0.06);
-      border: 2px solid var(--border);
-      color: var(--text);
-      padding: 10px 22px;
-      border-radius: 12px;
-      font-size: 0.95rem;
       font-weight: 800;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
+      color: var(--tv-focus);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
-    .tv-button.selected {
-      background: var(--accent);
-      border-color: var(--accent);
+    .next-toast-title {
+      font-size: 1.15rem;
+      font-weight: 800;
       color: #fff;
-      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+    .next-toast-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .next-toast-btn {
+      flex: 1;
+      background: var(--accent);
+      border: 0;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .next-toast-btn.cancel {
+      background: rgba(255, 255, 255, 0.1);
     }
 
-    /* Seasons Track */
-    .row-title {
-      font-size: 1.25rem;
+    /* Contenedor Principal TV (Sin reproductor gigante) */
+    .tv-content-container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 1.3rem;
       font-weight: 900;
-      margin-bottom: 14px;
+      letter-spacing: -0.3px;
+      margin-bottom: 16px;
       color: #fff;
       display: flex;
       align-items: center;
       gap: 10px;
     }
-    .horizontal-scroll-container {
+
+    /* Pista Horizontal de Temporadas */
+    .seasons-wrapper {
       position: relative;
+      margin-bottom: 34px;
+      padding: 10px 4px;
       overflow-x: hidden;
-      margin-bottom: 30px;
-      padding: 14px 4px;
     }
-    .horizontal-track {
+    .seasons-track {
       display: flex;
-      gap: 16px;
+      gap: 14px;
       transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
       will-change: transform;
     }
-    .season-pill {
+    .season-pill-tv {
       background: var(--surface);
       border: 2px solid var(--border);
       color: var(--text-muted);
-      padding: 14px 30px;
+      padding: 14px 32px;
       border-radius: 14px;
-      font-size: 1.15rem;
+      font-size: 1.2rem;
       font-weight: 900;
       white-space: nowrap;
       flex-shrink: 0;
+      cursor: pointer;
     }
-    .season-pill.selected {
+    .season-pill-tv.selected {
       background: #2563eb;
       border-color: #3b82f6;
       color: #fff;
       box-shadow: 0 6px 25px rgba(37, 99, 235, 0.5);
     }
 
-    /* Episodes Cards Carousel */
-    .episode-card {
+    /* Foco TV para Control Remoto */
+    .tv-focus-target {
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s, border-color 0.2s;
+    }
+    .tv-focus-target.tv-has-focus {
+      border-color: var(--tv-focus) !important;
+      box-shadow: 0 0 32px var(--tv-glow) !important;
+      transform: scale(1.08) !important;
+      z-index: 50 !important;
+    }
+
+    /* Carrusel Horizontal de Episodios */
+    .episodes-wrapper {
+      position: relative;
+      padding: 14px 6px 28px 6px;
+      overflow-x: hidden;
+      margin-bottom: 30px;
+    }
+    .episodes-track {
+      display: flex;
+      gap: 20px;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: transform;
+    }
+    .ep-card-tv {
       background: var(--surface);
       border: 2px solid var(--border);
-      border-radius: 16px;
+      border-radius: 18px;
       overflow: hidden;
-      width: 320px;
+      width: 330px;
       flex-shrink: 0;
       display: flex;
       flex-direction: column;
     }
-    .episode-card.selected {
+    .ep-card-tv.current-playing {
       border-color: var(--accent);
       box-shadow: 0 0 25px var(--accent-glow);
     }
-    .card-thumb {
+    .ep-thumb-frame {
       position: relative;
       width: 100%;
-      height: 175px;
+      height: 185px;
       background: #020409;
     }
-    .card-thumb img {
+    .ep-thumb-frame img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
-    .card-badge {
+    .ep-tag-badge {
       position: absolute;
       bottom: 10px;
       left: 10px;
@@ -265,26 +309,50 @@
       font-weight: 900;
       color: var(--gold);
     }
-    .card-body {
-      padding: 16px;
+    .ep-details-body {
+      padding: 18px;
       flex: 1;
     }
-    .card-title {
-      font-size: 1.05rem;
+    .ep-name-title {
+      font-size: 1.1rem;
       font-weight: 900;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .card-desc {
-      font-size: 0.85rem;
+    .ep-synopsis-text {
+      font-size: 0.88rem;
       color: var(--text-muted);
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      line-height: 1.4;
+      line-height: 1.45;
+    }
+
+    /* Servidor Activo / Selector Rápido */
+    .servers-quick-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .server-pill-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 2px solid var(--border);
+      color: var(--text);
+      padding: 9px 18px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .server-pill-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 18px var(--accent-glow);
     }
   </style>
 </head>
@@ -294,54 +362,48 @@
       <div class="brand-icon">M</div>
       <div><div class="brand-title">El Mentalista</div></div>
     </div>
-    <div class="tv-controls-hint">
-      <span>Navegar con Control Remoto:</span>
-      <span class="tv-key-pill">▲ ▼ ◄ ►</span>
-      <span class="tv-key-pill">OK</span>
+    <div class="autoplay-badge">
+      <span>⚡ Auto-Reproducción Siguiente: Activada</span>
     </div>
   </header>
 
-  <div class="tv-container">
-    <!-- Reproductor -->
-    <div class="player-section">
-      <div class="video-viewport">
-        <iframe id="tv-frame" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>
-      </div>
-      <div class="player-details">
-        <div class="details-row">
-          <div class="current-title" id="now-title">Cargando episodio...</div>
-          <div class="current-badge" id="now-tag">T1 E1</div>
-        </div>
-        <div class="current-desc" id="now-desc">Patrick Jane investiga crímenes complejos junto al CBI.</div>
-
-        <!-- Fila 0: Servidores de Video -->
-        <div class="control-row" id="row-servers"></div>
-
-        <!-- Fila 1: Botones de Acción -->
-        <div class="control-row" id="row-actions">
-          <button class="tv-button tv-target" data-row="1" onclick="fullscreenVideo()">
-            ⛶ Pantalla Completa
-          </button>
-          <button class="tv-button tv-target" data-row="1" onclick="nextEpisode()">
-            ⏭️ Siguiente Episodio
-          </button>
-          <button class="tv-button tv-target" data-row="1" onclick="reloadVideo()">
-            🔄 Recargar Video
-          </button>
-        </div>
-      </div>
+  <div class="tv-content-container">
+    <!-- Fila 0: Selector de Temporadas (Temporada 1 a 7) -->
+    <div class="section-label">📅 Selecciona Temporada:</div>
+    <div class="seasons-wrapper">
+      <div class="seasons-track" id="seasons-track"></div>
     </div>
 
-    <!-- Fila 2: Selector de Temporadas -->
-    <div class="row-title">📅 Temporadas (1 - 7):</div>
-    <div class="horizontal-scroll-container">
-      <div class="horizontal-track" id="seasons-track"></div>
-    </div>
+    <!-- Fila 1: Servidor / Audio para el capítulo -->
+    <div class="section-label" style="font-size: 1.1rem; color: var(--gold);">🔊 Idioma / Servidor:</div>
+    <div class="servers-quick-bar" id="servers-bar"></div>
 
-    <!-- Fila 3: Carrusel de Episodios -->
-    <div class="row-title" id="episodes-row-title">🎬 Episodios Temporada 1:</div>
-    <div class="horizontal-scroll-container">
-      <div class="horizontal-track" id="episodes-track"></div>
+    <!-- Fila 2: Episodios de la Temporada -->
+    <div class="section-label" id="episodes-headline">🎬 Episodios Temporada 1:</div>
+    <div class="episodes-wrapper">
+      <div class="episodes-track" id="episodes-track"></div>
+    </div>
+  </div>
+
+  <!-- Reproductor Modal a Pantalla Completa (Cero previsualización gigante inicial) -->
+  <div class="video-modal-overlay" id="cinema-modal">
+    <div class="modal-topbar">
+      <div class="modal-ep-info" id="modal-title">T1 E1 - Piloto</div>
+      <div class="modal-controls-group">
+        <button class="modal-btn" onclick="playNextEpisodeDirectly()">⏭️ Siguiente</button>
+        <button class="modal-btn" onclick="closeCinemaModal()">✖ Salir al Menú</button>
+      </div>
+    </div>
+    <iframe id="cinema-iframe" class="iframe-cinema-box" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+  </div>
+
+  <!-- Notificación de cuenta regresiva para siguiente episodio -->
+  <div class="next-ep-toast" id="next-toast">
+    <div class="next-toast-header">Siguiente Episodio en 8s</div>
+    <div class="next-toast-title" id="next-toast-name">T1:E2</div>
+    <div class="next-toast-actions">
+      <button class="next-toast-btn" onclick="confirmNextEpisodeNow()">Ver Ahora</button>
+      <button class="next-toast-btn cancel" onclick="dismissNextToast()">Cancelar</button>
     </div>
   </div>
 
@@ -349,171 +411,225 @@
     let allEpisodes = [];
     let currentSeason = 1;
     let currentEp = null;
-    let currentServer = null;
+    let selectedServerIndex = 0;
 
-    // Estado de Foco TV: { row: 0..3, col: 0..N }
-    // Fila 0: Servidores
-    // Fila 1: Acciones (Pantalla completa, siguiente, recargar)
-    // Fila 2: Temporadas
-    // Fila 3: Episodios
-    let currentRow = 2; // Iniciar en Temporadas
+    // Matriz de Navegación D-Pad
+    // Fila 0: Temporadas
+    // Fila 1: Servidores
+    // Fila 2: Episodios
+    let currentRow = 0;
     let currentCol = 0;
+
+    let isCinemaOpen = false;
+    let autoPlayTimer = null;
 
     async function init() {
       try {
         const res = await fetch('episodes.json');
         allEpisodes = await res.json();
 
-        buildSeasons();
-        buildEpisodes();
+        buildSeasonsUI();
+        selectSeason(1);
 
-        if (allEpisodes.length > 0) {
-          playEp(allEpisodes[0], false);
-        }
-
-        // Registrar navegación por teclado / D-Pad
-        initDpadController();
+        setupDpad();
         updateFocusUI();
       } catch (err) {
-        console.error("Error al cargar:", err);
+        console.error("Error cargando episodios:", err);
       }
     }
 
-    function buildSeasons() {
+    function buildSeasonsUI() {
       const seasons = [...new Set(allEpisodes.map(e => e.season))].sort((a, b) => a - b);
       const track = document.getElementById('seasons-track');
       track.innerHTML = '';
 
       seasons.forEach((s, idx) => {
         const pill = document.createElement('div');
-        pill.className = `season-pill tv-target ${s === currentSeason ? 'selected' : ''}`;
-        pill.dataset.row = '2';
+        pill.className = `season-pill-tv tv-focus-target ${s === currentSeason ? 'selected' : ''}`;
+        pill.dataset.row = '0';
         pill.dataset.col = idx;
         pill.textContent = `Temporada ${s}`;
         pill.onclick = () => {
-          setSeason(s);
-          setFocus(2, idx);
+          selectSeason(s);
+          setFocus(0, idx);
         };
         track.appendChild(pill);
       });
     }
 
-    function setSeason(seasonNum) {
+    function selectSeason(seasonNum) {
       currentSeason = seasonNum;
-      document.querySelectorAll('.season-pill').forEach((p, idx) => {
+      document.querySelectorAll('.season-pill-tv').forEach((p, idx) => {
         p.classList.toggle('selected', idx + 1 === seasonNum);
       });
-      document.getElementById('episodes-row-title').textContent = `🎬 Episodios Temporada ${seasonNum}:`;
-      buildEpisodes();
+      document.getElementById('episodes-headline').textContent = `🎬 Episodios Temporada ${seasonNum}:`;
+      buildEpisodesUI();
+      buildServersUI();
     }
 
-    function buildEpisodes() {
+    function buildServersUI() {
+      const bar = document.getElementById('servers-bar');
+      bar.innerHTML = '';
+
+      // Usar los servidores del primer episodio de la temporada como opciones de audio
+      const seasonEps = allEpisodes.filter(e => e.season === currentSeason);
+      if (seasonEps.length === 0) return;
+      const refServers = seasonEps[0].servers || [];
+
+      refServers.forEach((srv, idx) => {
+        const btn = document.createElement('button');
+        btn.className = `server-pill-btn tv-focus-target ${idx === selectedServerIndex ? 'active' : ''}`;
+        btn.dataset.row = '1';
+        btn.dataset.col = idx;
+        btn.innerHTML = `<span>▶</span> <span>${srv.language} (${srv.server})</span>`;
+        btn.onclick = () => {
+          selectedServerIndex = idx;
+          document.querySelectorAll('.server-pill-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          setFocus(1, idx);
+        };
+        bar.appendChild(btn);
+      });
+    }
+
+    function buildEpisodesUI() {
       const filtered = allEpisodes.filter(e => e.season === currentSeason);
       const track = document.getElementById('episodes-track');
       track.innerHTML = '';
 
       filtered.forEach((ep, idx) => {
         const card = document.createElement('div');
-        const isActive = currentEp && currentEp.season === ep.season && currentEp.episode === ep.episode;
-        card.className = `episode-card tv-target ${isActive ? 'selected' : ''}`;
-        card.dataset.row = '3';
+        const isCurrent = currentEp && currentEp.season === ep.season && currentEp.episode === ep.episode;
+        card.className = `ep-card-tv tv-focus-target ${isCurrent ? 'current-playing' : ''}`;
+        card.dataset.row = '2';
         card.dataset.col = idx;
 
         card.onclick = () => {
-          playEp(ep, true);
-          setFocus(3, idx);
+          launchEpisode(ep);
+          setFocus(2, idx);
         };
 
         const posterImg = ep.poster || 'https://image.tmdb.org/t/p/w500/snKUzvCl3kGv0RWBjEjnOXMGvdl.jpg';
         card.innerHTML = `
-          <div class="card-thumb">
+          <div class="ep-thumb-frame">
             <img src="${posterImg}" alt="T${ep.season} E${ep.episode}">
-            <div class="card-badge">T${ep.season} : E${ep.episode}</div>
+            <div class="ep-tag-badge">T${ep.season} : E${ep.episode}</div>
           </div>
-          <div class="card-body">
-            <div class="card-title">${ep.title}</div>
-            <div class="card-desc">${ep.overview || 'Sin descripción disponible.'}</div>
+          <div class="ep-details-body">
+            <div class="ep-name-title">${ep.title}</div>
+            <div class="ep-synopsis-text">${ep.overview || 'Patrick Jane y el equipo del CBI.'}</div>
           </div>
         `;
         track.appendChild(card);
       });
     }
 
-    function playEp(ep, scrollToTop = false) {
+    function launchEpisode(ep) {
       currentEp = ep;
-      document.getElementById('now-title').textContent = ep.title;
-      document.getElementById('now-tag').textContent = `T${ep.season} : E${ep.episode}`;
-      document.getElementById('now-desc').textContent = ep.overview || 'Patrick Jane y el equipo del CBI investigan este caso.';
 
-      // Actualizar tarjetas de episodios seleccionadas
-      document.querySelectorAll('.episode-card').forEach((c) => {
-        const badge = c.querySelector('.card-badge');
-        c.classList.toggle('selected', badge && badge.textContent === `T${ep.season} : E${ep.episode}`);
+      // Resaltar tarjeta seleccionada
+      document.querySelectorAll('.ep-card-tv').forEach(c => {
+        const badge = c.querySelector('.ep-tag-badge');
+        c.classList.toggle('current-playing', badge && badge.textContent === `T${ep.season} : E${ep.episode}`);
       });
 
-      // Construir Fila 0 (Servidores)
-      const serversRow = document.getElementById('row-servers');
-      serversRow.innerHTML = '';
+      // Obtener servidor seleccionado
+      let targetServerUrl = (ep.servers && ep.servers[selectedServerIndex]) ? ep.servers[selectedServerIndex].embed_url : (ep.servers[0] ? ep.servers[0].embed_url : "");
 
-      if (!ep.servers || ep.servers.length === 0) {
-        serversRow.innerHTML = '<span style="color:#ef4444;">Sin servidores.</span>';
-        return;
-      }
+      document.getElementById('modal-title').textContent = `T${ep.season} E${ep.episode} - ${ep.title}`;
+      const iframe = document.getElementById('cinema-iframe');
+      iframe.src = targetServerUrl;
 
-      currentServer = ep.servers[0];
+      // Abrir modal a pantalla completa sin previsualización gigante inicial
+      document.getElementById('cinema-modal').classList.add('active');
+      isCinemaOpen = true;
 
-      ep.servers.forEach((srv, idx) => {
-        const btn = document.createElement('button');
-        btn.className = `tv-button tv-target ${idx === 0 ? 'selected' : ''}`;
-        btn.dataset.row = '0';
-        btn.dataset.col = idx;
-        btn.innerHTML = `<span>▶</span> <span>${srv.language} (${srv.server})</span>`;
-        btn.onclick = () => {
-          document.querySelectorAll('#row-servers .tv-button').forEach(b => b.classList.remove('selected'));
-          btn.classList.add('selected');
-          currentServer = srv;
-          loadVideoUrl(srv.embed_url);
-          setFocus(0, idx);
-        };
-        serversRow.appendChild(btn);
-      });
-
-      loadVideoUrl(currentServer.embed_url);
-
-      if (scrollToTop) {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+      // Temporizador de Auto-Reproducción (45 minutos aprox estándar de duración de un capítulo)
+      // Dispara un aviso a los 42 minutos para pasar automáticamente al siguiente
+      scheduleAutoPlayNext();
     }
 
-    function loadVideoUrl(url) {
-      document.getElementById('tv-frame').src = url;
+    function closeCinemaModal() {
+      document.getElementById('cinema-modal').classList.remove('active');
+      document.getElementById('cinema-iframe').src = '';
+      isCinemaOpen = false;
+      if (autoPlayTimer) clearTimeout(autoPlayTimer);
+      dismissNextToast();
     }
 
-    function reloadVideo() {
-      if (currentServer) loadVideoUrl(currentServer.embed_url);
-    }
-
-    function nextEpisode() {
+    function playNextEpisodeDirectly() {
       if (!currentEp) return;
       const idx = allEpisodes.findIndex(e => e.season === currentEp.season && e.episode === currentEp.episode);
       if (idx !== -1 && idx + 1 < allEpisodes.length) {
         const next = allEpisodes[idx + 1];
         if (next.season !== currentSeason) {
-          setSeason(next.season);
+          selectSeason(next.season);
         }
-        playEp(next, true);
+        launchEpisode(next);
+      } else {
+        alert("¡Has llegado al final de la serie!");
+        closeCinemaModal();
       }
     }
 
-    function fullscreenVideo() {
-      const frame = document.getElementById('tv-frame');
-      if (frame.requestFullscreen) frame.requestFullscreen();
-      else if (frame.webkitRequestFullscreen) frame.webkitRequestFullscreen();
+    /* === AUTO-REPRODUCCIÓN SIGUIENTE EPISODIO === */
+    function scheduleAutoPlayNext() {
+      if (autoPlayTimer) clearTimeout(autoPlayTimer);
+
+      // Listener para mensajes de postMessage por si el reproductor emite 'ended'
+      window.addEventListener('message', handlePlayerEvents);
+
+      // Temporizador de seguridad: 42 minutos para mostrar Toast de siguiente episodio
+      autoPlayTimer = setTimeout(() => {
+        showNextEpisodeToast();
+      }, 42 * 60 * 1000);
     }
 
-    /* === MOTOR DE NAVEGACIÓN D-PAD NATIVO PARA ANDROID TV === */
-    function initDpadController() {
+    function handlePlayerEvents(e) {
+      if (!e.data) return;
+      const msg = typeof e.data === 'string' ? e.data.toLowerCase() : JSON.stringify(e.data).toLowerCase();
+      if (msg.includes('ended') || msg.includes('complete') || msg.includes('video_ended')) {
+        playNextEpisodeDirectly();
+      }
+    }
+
+    function showNextEpisodeToast() {
+      const idx = allEpisodes.findIndex(e => e.season === currentEp.season && e.episode === currentEp.episode);
+      if (idx !== -1 && idx + 1 < allEpisodes.length) {
+        const next = allEpisodes[idx + 1];
+        document.getElementById('next-toast-name').textContent = `T${next.season} E${next.episode} - ${next.title}`;
+        document.getElementById('next-toast').style.display = 'flex';
+
+        // Auto-pasar en 10 segundos si el usuario no cancela
+        setTimeout(() => {
+          if (document.getElementById('next-toast').style.display === 'flex') {
+            dismissNextToast();
+            playNextEpisodeDirectly();
+          }
+        }, 10000);
+      }
+    }
+
+    function confirmNextEpisodeNow() {
+      dismissNextToast();
+      playNextEpisodeDirectly();
+    }
+
+    function dismissNextToast() {
+      document.getElementById('next-toast').style.display = 'none';
+    }
+
+    /* === MOTOR DE NAVEGACIÓN D-PAD NATIVO === */
+    function setupDpad() {
       window.addEventListener('keydown', (e) => {
+        if (isCinemaOpen) {
+          if (e.key === 'Back' || e.key === 'Escape' || e.key === 'BrowserBack') {
+            closeCinemaModal();
+            e.preventDefault();
+          }
+          return;
+        }
+
         switch (e.key) {
           case 'ArrowUp':
           case 'Up':
@@ -538,33 +654,33 @@
           case 'Enter':
           case 'Select':
           case 'Ok':
-            triggerCurrentFocus();
+            triggerSelection();
             e.preventDefault();
             break;
         }
       });
     }
 
-    function getElementsInRow(row) {
-      return Array.from(document.querySelectorAll(`.tv-target[data-row="${row}"]`));
+    function getRowItems(row) {
+      return Array.from(document.querySelectorAll(`.tv-focus-target[data-row="${row}"]`));
     }
 
     function moveRow(delta) {
-      let targetRow = currentRow + delta;
-      while (targetRow >= 0 && targetRow <= 3) {
-        const items = getElementsInRow(targetRow);
+      let nextRow = currentRow + delta;
+      while (nextRow >= 0 && nextRow <= 2) {
+        const items = getRowItems(nextRow);
         if (items.length > 0) {
-          currentRow = targetRow;
+          currentRow = nextRow;
           currentCol = Math.min(currentCol, items.length - 1);
           updateFocusUI();
           return;
         }
-        targetRow += delta;
+        nextRow += delta;
       }
     }
 
     function moveCol(delta) {
-      const items = getElementsInRow(currentRow);
+      const items = getRowItems(currentRow);
       if (items.length === 0) return;
       currentCol = Math.max(0, Math.min(currentCol + delta, items.length - 1));
       updateFocusUI();
@@ -577,16 +693,15 @@
     }
 
     function updateFocusUI() {
-      // Remover foco previo
-      document.querySelectorAll('.tv-active-focus').forEach(el => el.classList.remove('tv-active-focus'));
+      document.querySelectorAll('.tv-has-focus').forEach(el => el.classList.remove('tv-has-focus'));
 
-      const items = getElementsInRow(currentRow);
+      const items = getRowItems(currentRow);
       if (items.length === 0) return;
       const target = items[currentCol] || items[0];
-      target.classList.add('tv-active-focus');
+      target.classList.add('tv-has-focus');
 
-      // Si es carrusel (fila 2 o fila 3), desplazar horizontalmente suave
-      if (currentRow === 2 || currentRow === 3) {
+      // Si es Fila 0 (Temporadas) o Fila 2 (Episodios), auto-centrar horizontalmente
+      if (currentRow === 0 || currentRow === 2) {
         const track = target.parentElement;
         const targetOffsetLeft = target.offsetLeft;
         const centerOffset = (window.innerWidth / 2) - (target.offsetWidth / 2);
@@ -594,16 +709,13 @@
         track.style.transform = `translateX(-${scrollX}px)`;
       }
 
-      // Asegurar que el elemento esté visible verticalmente en pantalla
       target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    function triggerCurrentFocus() {
-      const items = getElementsInRow(currentRow);
+    function triggerSelection() {
+      const items = getRowItems(currentRow);
       const target = items[currentCol];
-      if (target) {
-        target.click();
-      }
+      if (target) target.click();
     }
 
     init();
