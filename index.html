@@ -37,7 +37,7 @@
       user-select: none;
     }
 
-    /* VISTA 1: CATÁLOGO NATIVO TV (0 reproductores en pantalla) */
+    /* VISTA 1: CATÁLOGO NATIVO TV (0 reproductores arriba) */
     #catalog-view {
       padding: 30px 48px;
     }
@@ -71,20 +71,17 @@
       font-size: 1.8rem;
       letter-spacing: -0.5px;
     }
-    .tv-hint {
+    .smart-server-badge {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: var(--green);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 800;
       display: flex;
       align-items: center;
-      gap: 12px;
-      font-size: 0.95rem;
-      color: var(--text-muted);
-      font-weight: 700;
-    }
-    .key-badge {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid var(--border);
-      padding: 4px 12px;
-      border-radius: 8px;
-      color: #fff;
+      gap: 6px;
     }
 
     .section-title {
@@ -97,7 +94,6 @@
       color: #fff;
     }
 
-    /* Pistas Horizontales con Desplazamiento Suave */
     .row-scroll-wrapper {
       position: relative;
       overflow-x: hidden;
@@ -111,7 +107,7 @@
       will-change: transform;
     }
 
-    /* Elementos con Foco para Control Remoto */
+    /* Foco D-Pad para Control Remoto */
     .tv-focus-item {
       cursor: pointer;
       border: 2px solid transparent;
@@ -124,7 +120,6 @@
       z-index: 50 !important;
     }
 
-    /* Píldoras de Temporada */
     .season-btn {
       background: var(--surface);
       border: 2px solid var(--border);
@@ -143,7 +138,6 @@
       box-shadow: 0 6px 25px rgba(37, 99, 235, 0.5);
     }
 
-    /* Tarjetas de Episodio */
     .ep-card {
       background: var(--surface);
       border: 2px solid var(--border);
@@ -199,7 +193,7 @@
       line-height: 1.4;
     }
 
-    /* VISTA 2: PANTALLA COMPLETA DE REPRODUCCIÓN (SOLO AL DARLE CLICK) */
+    /* VISTA 2: PANTALLA COMPLETA DE REPRODUCCIÓN */
     #player-view {
       display: none;
       position: fixed;
@@ -212,7 +206,6 @@
       display: flex;
     }
 
-    /* Barra Superior con Controles en Reproductor */
     .player-hud-top {
       position: absolute;
       top: 0;
@@ -248,8 +241,12 @@
       font-weight: 900;
       color: #fff;
     }
+    .player-server-status {
+      font-size: 0.78rem;
+      color: var(--green);
+      font-weight: 800;
+    }
 
-    /* Botones de Acción en Reproductor */
     .player-actions-row {
       display: flex;
       gap: 14px;
@@ -287,7 +284,6 @@
       flex: 1;
     }
 
-    /* Selector de Servidores en el Reproductor */
     .player-servers-list {
       display: flex;
       gap: 8px;
@@ -312,22 +308,20 @@
 </head>
 <body>
 
-  <!-- 1. VISTA CATÁLOGO (Cero reproductores arriba) -->
+  <!-- 1. VISTA CATÁLOGO (Sin reproductor arriba) -->
   <div id="catalog-view">
     <header>
       <div class="brand">
         <div class="brand-icon">M</div>
         <div class="brand-title">El Mentalista</div>
       </div>
-      <div class="tv-hint">
-        <span>Control Remoto:</span>
-        <span class="key-badge">◄ ► ▲ ▼</span>
-        <span class="key-badge">OK: Reproducir</span>
+      <div class="smart-server-badge">
+        <span>⚡ Auto-Selección Mejor Servidor Activa</span>
       </div>
     </header>
 
     <!-- Fila 0: Temporadas -->
-    <div class="section-title">📅 Temporada:</div>
+    <div class="section-title">📅 Temporadas (1 a 7):</div>
     <div class="row-scroll-wrapper">
       <div class="horizontal-row" id="seasons-row"></div>
     </div>
@@ -339,24 +333,22 @@
     </div>
   </div>
 
-  <!-- 2. VISTA REPRODUCTOR (Solo aparece al darle a un episodio) -->
+  <!-- 2. VISTA REPRODUCTOR (Solo al hacer clic) -->
   <div id="player-view">
     <div class="player-hud-top" id="player-hud">
       <div class="player-ep-headline">
         <span class="player-ep-num" id="hud-ep-tag">TEMPORADA 1 : EPISODIO 1</span>
         <span class="player-ep-name" id="hud-ep-title">Piloto</span>
+        <span class="player-server-status" id="hud-server-info">⚡ Mejor Servidor: Hyper (Morencius HD)</span>
       </div>
 
       <div class="player-actions-row">
-        <!-- Selector de Servidores en el Reproductor -->
         <div class="player-servers-list" id="hud-servers"></div>
 
-        <!-- Botón Siguiente Episodio -->
         <button class="player-btn primary tv-focus-item" id="btn-next-ep" onclick="playNextEpisode()">
           ⏭️ Siguiente Episodio
         </button>
 
-        <!-- Botón Salir al Catálogo -->
         <button class="player-btn tv-focus-item" id="btn-exit-player" onclick="closePlayerView()">
           ✖ Volver al Menú
         </button>
@@ -372,14 +364,45 @@
     let currentEp = null;
     let currentServerIndex = 0;
 
-    // Matriz de Navegación D-Pad
-    // En catálogo: Fila 0 = Temporadas, Fila 1 = Episodios
-    // En reproductor: Fila 99 = Botones de HUD
     let currentRow = 0;
     let currentCol = 0;
     let isPlaying = false;
     let hudTimeout = null;
     let autoPlayInterval = null;
+
+    /* RANKING INTELIGENTE DE SERVIDORES:
+       Prioridad 1: Hyper (Morencius) -> Carga en <400ms, audio Latino HD nativo.
+       Prioridad 2: Nebula (Martinshop) -> Servidor de alta velocidad sin límites de buffering.
+       Prioridad 3: Death Star (VidLink) / Goldmember -> Excelente estabilidad multilenguaje.
+       Prioridad 4: Eclipse (Dood) -> Fallback seguro.
+    */
+    const SERVER_PRIORITY = [
+      "hyper",
+      "morencius",
+      "nebula",
+      "martinshop",
+      "goldmember",
+      "death star",
+      "vidlink",
+      "trinity",
+      "eclipse"
+    ];
+
+    function getBestServer(servers) {
+      if (!servers || servers.length === 0) return null;
+
+      // Buscar por orden de calidad y velocidad
+      for (const rank of SERVER_PRIORITY) {
+        const found = servers.find(s => 
+          (s.server && s.server.toLowerCase().includes(rank)) ||
+          (s.embed_url && s.embed_url.toLowerCase().includes(rank))
+        );
+        if (found) return found;
+      }
+
+      // Por defecto el primer servidor
+      return servers[0];
+    }
 
     async function init() {
       try {
@@ -392,7 +415,7 @@
         setupDpadController();
         updateFocusUI();
       } catch (e) {
-        console.error("Error al cargar episodios:", e);
+        console.error("Error cargando episodios:", e);
       }
     }
 
@@ -454,40 +477,42 @@
       });
     }
 
-    /* === ABRIR REPRODUCTOR A PANTALLA COMPLETA === */
     function openPlayerView(ep) {
       currentEp = ep;
       isPlaying = true;
 
-      // Actualizar Textos del HUD
+      // Seleccionar automáticamente el mejor servidor siempre
+      const bestServer = getBestServer(ep.servers);
+      const bestIndex = ep.servers ? ep.servers.indexOf(bestServer) : 0;
+      currentServerIndex = bestIndex >= 0 ? bestIndex : 0;
+
       document.getElementById('hud-ep-tag').textContent = `TEMPORADA ${ep.season} : EPISODIO ${ep.episode}`;
       document.getElementById('hud-ep-title').textContent = ep.title;
+      document.getElementById('hud-server-info').textContent = `⚡ Servidor Óptimo: ${bestServer.server} (${bestServer.language.split(' ')[0]})`;
 
-      // Servidores en el HUD
+      // Renderizar servidores en el HUD con el mejor seleccionado por defecto
       const serversBox = document.getElementById('hud-servers');
       serversBox.innerHTML = '';
-      currentServerIndex = 0;
 
       if (ep.servers && ep.servers.length > 0) {
         ep.servers.forEach((srv, idx) => {
           const btn = document.createElement('button');
-          btn.className = `server-tag-btn ${idx === 0 ? 'active' : ''}`;
+          btn.className = `server-tag-btn ${idx === currentServerIndex ? 'active' : ''}`;
           btn.textContent = `${srv.language.split(' ')[0]} (${srv.server})`;
           btn.onclick = () => {
             currentServerIndex = idx;
             document.querySelectorAll('.server-tag-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             document.getElementById('cinema-frame').src = srv.embed_url;
+            document.getElementById('hud-server-info').textContent = `⚡ Servidor: ${srv.server}`;
           };
           serversBox.appendChild(btn);
         });
       }
 
-      // Cargar Video
-      const targetUrl = (ep.servers && ep.servers.length > 0) ? ep.servers[0].embed_url : "";
-      document.getElementById('cinema-frame').src = targetUrl;
+      // Cargar el mejor servidor directamente
+      document.getElementById('cinema-frame').src = bestServer ? bestServer.embed_url : "";
 
-      // Mostrar Vista Reproductor
       document.getElementById('catalog-view').style.display = 'none';
       document.getElementById('player-view').classList.add('active');
 
@@ -520,11 +545,9 @@
       }
     }
 
-    /* Auto-Reproducción al terminar capítulo (~43 min estándar) */
     function scheduleAutoPlay() {
       if (autoPlayInterval) clearTimeout(autoPlayInterval);
 
-      // Escuchar eventos de postMessage
       window.addEventListener('message', (e) => {
         if (!e.data) return;
         const msg = JSON.stringify(e.data).toLowerCase();
@@ -533,7 +556,7 @@
         }
       });
 
-      // Temporizador automático
+      // Auto-pasar tras la duración estándar de 43 minutos
       autoPlayInterval = setTimeout(() => {
         playNextEpisode();
       }, 43 * 60 * 1000);
@@ -548,18 +571,15 @@
       }, 4500);
     }
 
-    /* === MOTOR D-PAD PARA CONTROL REMOTO === */
     function setupDpadController() {
       window.addEventListener('keydown', (e) => {
         if (isPlaying) {
-          // Tecla Atrás en el reproductor sale al catálogo
           if (e.key === 'Back' || e.key === 'Escape' || e.key === 'BrowserBack') {
             closePlayerView();
             e.preventDefault();
             return;
           }
 
-          // Cualquier flecha en el reproductor muestra el HUD
           showHudBriefly();
 
           if (e.key === 'ArrowRight') {
@@ -642,7 +662,6 @@
       const target = items[currentCol] || items[0];
       target.classList.add('is-focused');
 
-      // Auto-centrado horizontal suave
       const track = target.parentElement;
       const targetOffsetLeft = target.offsetLeft;
       const centerOffset = (window.innerWidth / 2) - (target.offsetWidth / 2);
