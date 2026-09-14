@@ -94,15 +94,27 @@
 
     .row-scroll-wrapper {
       position: relative;
-      overflow-x: hidden;
+      overflow-x: auto;
+      overflow-y: hidden;
       padding: 12px 6px;
       margin-bottom: 36px;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-x;
+      scrollbar-width: none; /* Firefox */
+      scroll-behavior: smooth;
+      cursor: grab;
+    }
+    .row-scroll-wrapper:active {
+      cursor: grabbing;
+    }
+    .row-scroll-wrapper::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, TV WebKit */
     }
     .horizontal-row {
       display: flex;
       gap: 18px;
-      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      will-change: transform;
+      width: max-content;
+      will-change: transform, scroll-position;
     }
 
     /* Elementos con Foco */
@@ -735,13 +747,13 @@
       const target = items[currentCol] || items[0];
       target.classList.add('is-focused');
 
-      const track = target.parentElement;
-      const targetOffsetLeft = target.offsetLeft;
-      const centerOffset = (window.innerWidth / 2) - (target.offsetWidth / 2);
-      const scrollX = Math.max(0, targetOffsetLeft - centerOffset);
-      track.style.transform = `translateX(-${scrollX}px)`;
-
-      target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      const container = target.closest('.row-scroll-wrapper');
+      if (container) {
+        const targetOffsetLeft = target.offsetLeft;
+        const centerOffset = (container.clientWidth / 2) - (target.offsetWidth / 2);
+        const scrollX = Math.max(0, targetOffsetLeft - centerOffset);
+        container.scrollTo({ left: scrollX, behavior: 'smooth' });
+      }
     }
 
     function triggerSelection() {
@@ -750,7 +762,39 @@
       if (target) target.click();
     }
 
+    function setupDragToScroll() {
+      document.querySelectorAll('.row-scroll-wrapper').forEach(wrapper => {
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        wrapper.addEventListener('mousedown', (e) => {
+          isDown = true;
+          wrapper.classList.add('active');
+          startX = e.pageX - wrapper.offsetLeft;
+          scrollLeft = wrapper.scrollLeft;
+        });
+
+        wrapper.addEventListener('mouseleave', () => {
+          isDown = false;
+        });
+
+        wrapper.addEventListener('mouseup', () => {
+          isDown = false;
+        });
+
+        wrapper.addEventListener('mousemove', (e) => {
+          if (!isDown) return;
+          e.preventDefault();
+          const x = e.pageX - wrapper.offsetLeft;
+          const walk = (x - startX) * 1.5; // Velocidad de arrastre
+          wrapper.scrollLeft = scrollLeft - walk;
+        });
+      });
+    }
+
     init();
+    setTimeout(setupDragToScroll, 500);
   </script>
 </body>
 </html>
