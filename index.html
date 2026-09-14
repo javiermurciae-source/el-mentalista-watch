@@ -28,16 +28,17 @@
       outline: none;
       -webkit-tap-highlight-color: transparent;
     }
-    body {
+    html, body {
       background-color: var(--bg);
       color: var(--text);
       font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
-      min-height: 100vh;
+      width: 100vw;
+      height: 100vh;
       overflow-x: hidden;
       user-select: none;
     }
 
-    /* 1. VISTA CATÁLOGO (CERO REPRODUCTORES Y CERO SERVIDORES VISIBLES) */
+    /* VISTA 1: CATÁLOGO NATIVO TV */
     #catalog-view {
       padding: 30px 48px;
     }
@@ -88,7 +89,6 @@
       color: #fff;
     }
 
-    /* Filas Horizontales con Desplazamiento Suave */
     .row-scroll-wrapper {
       position: relative;
       overflow-x: hidden;
@@ -115,7 +115,6 @@
       z-index: 50 !important;
     }
 
-    /* Botones de Temporadas */
     .season-btn {
       background: var(--surface);
       border: 2px solid var(--border);
@@ -134,7 +133,6 @@
       box-shadow: 0 6px 25px rgba(37, 99, 235, 0.5);
     }
 
-    /* Tarjetas de Episodios */
     .ep-card {
       background: var(--surface);
       border: 2px solid var(--border);
@@ -190,34 +188,45 @@
       line-height: 1.4;
     }
 
-    /* 2. VISTA REPRODUCTOR A PANTALLA COMPLETA 100% LIMPIA */
+    /* VISTA 2: FULLSCREEN NATIVO HARDWARE (100% de la pantalla del televisor) */
     #player-view {
       display: none;
       position: fixed;
-      inset: 0;
-      background: #000;
-      z-index: 9999;
+      top: 0;
+      left: 0;
       width: 100vw;
       height: 100vh;
+      background: #000;
+      z-index: 99999;
     }
     #player-view.active {
       display: block;
     }
+    #player-view:fullscreen,
+    #player-view:-webkit-full-screen {
+      width: 100vw !important;
+      height: 100vh !important;
+      background: #000 !important;
+    }
     .video-full-frame {
-      width: 100%;
-      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw !important;
+      height: 100vh !important;
       border: 0;
       display: block;
+      background: #000;
     }
 
-    /* Floating Controls: Aparecen solo al tocar una tecla y desaparecen en 3s */
+    /* Floating HUD: Se activa con el control remoto y desaparece solo */
     .floating-tv-hud {
       position: absolute;
-      top: 24px;
-      right: 36px;
+      top: 28px;
+      right: 40px;
       display: flex;
-      gap: 14px;
-      z-index: 10000;
+      gap: 16px;
+      z-index: 100000;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.3s ease;
@@ -227,13 +236,13 @@
       pointer-events: auto;
     }
     .hud-button {
-      background: rgba(15, 23, 42, 0.9);
-      border: 2px solid rgba(255, 255, 255, 0.25);
-      backdrop-filter: blur(12px);
+      background: rgba(15, 23, 42, 0.92);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(14px);
       color: #fff;
-      padding: 12px 22px;
+      padding: 12px 24px;
       border-radius: 12px;
-      font-size: 1rem;
+      font-size: 1.05rem;
       font-weight: 800;
       cursor: pointer;
       display: flex;
@@ -243,19 +252,19 @@
     .hud-button.primary {
       background: var(--accent);
       border-color: var(--accent);
-      box-shadow: 0 0 20px var(--accent-glow);
+      box-shadow: 0 0 25px var(--accent-glow);
     }
     .hud-button:focus,
     .hud-button.is-focused {
       border-color: var(--tv-focus) !important;
-      box-shadow: 0 0 30px var(--tv-glow) !important;
-      transform: scale(1.06);
+      box-shadow: 0 0 35px var(--tv-glow) !important;
+      transform: scale(1.08);
     }
   </style>
 </head>
 <body>
 
-  <!-- 1. VISTA CATÁLOGO (Solo Temporadas y Episodios, sin servidores flotantes) -->
+  <!-- VISTA 1: CATÁLOGO -->
   <div id="catalog-view">
     <header>
       <div class="brand">
@@ -267,22 +276,19 @@
       </div>
     </header>
 
-    <!-- Fila 0: Temporadas -->
     <div class="section-title">📅 Temporadas (1 a 7):</div>
     <div class="row-scroll-wrapper">
       <div class="horizontal-row" id="seasons-row"></div>
     </div>
 
-    <!-- Fila 1: Episodios de la Temporada -->
     <div class="section-title" id="episodes-title">🎬 Episodios Temporada 1:</div>
     <div class="row-scroll-wrapper">
       <div class="horizontal-row" id="episodes-row"></div>
     </div>
   </div>
 
-  <!-- 2. VISTA REPRODUCTOR A PANTALLA COMPLETA PURA -->
+  <!-- VISTA 2: REPRODUCTOR PANTALLA COMPLETA REAL -->
   <div id="player-view">
-    <!-- Controles flotantes discretos que desaparecen solos -->
     <div class="floating-tv-hud" id="tv-hud">
       <button class="hud-button primary tv-hud-item" id="btn-hud-next" onclick="playNextEpisode()">
         ⏭️ Siguiente Episodio
@@ -292,7 +298,7 @@
       </button>
     </div>
 
-    <iframe id="cinema-frame" class="video-full-frame" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    <iframe id="cinema-frame" class="video-full-frame" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>
   </div>
 
   <script>
@@ -300,7 +306,6 @@
     let currentSeason = 1;
     let currentEp = null;
 
-    // Fila 0: Temporadas | Fila 1: Episodios
     let currentRow = 0;
     let currentCol = 0;
     let isPlaying = false;
@@ -385,7 +390,7 @@
         card.dataset.col = idx;
 
         card.onclick = () => {
-          launchEpisode(ep);
+          launchEpisodeWithTrueFullscreen(ep);
         };
 
         const posterImg = ep.poster || 'https://image.tmdb.org/t/p/w500/snKUzvCl3kGv0RWBjEjnOXMGvdl.jpg';
@@ -403,18 +408,33 @@
       });
     }
 
-    /* === ABRIR REPRODUCTOR 100% PANTALLA COMPLETA === */
-    function launchEpisode(ep) {
+    /* === ACTIVAR PANTALLA COMPLETA REAL (HARDWARE FULLSCREEN API) === */
+    function launchEpisodeWithTrueFullscreen(ep) {
       currentEp = ep;
       isPlaying = true;
 
-      // Selección automática transparente del mejor servidor (Morencius / Hyper)
       const bestUrl = pickBestServer(ep.servers);
       document.getElementById('cinema-frame').src = bestUrl;
 
-      // Ocultar catálogo y activar pantalla completa
+      // Ocultar catálogo y mostrar reproductor
       document.getElementById('catalog-view').style.display = 'none';
-      document.getElementById('player-view').classList.add('active');
+      const playerEl = document.getElementById('player-view');
+      playerEl.classList.add('active');
+
+      // DISPARAR PANTALLA COMPLETA REAL DE NAVEGADOR / ANDROID TV
+      try {
+        if (playerEl.requestFullscreen) {
+          playerEl.requestFullscreen();
+        } else if (playerEl.webkitRequestFullscreen) {
+          playerEl.webkitRequestFullscreen();
+        } else if (playerEl.mozRequestFullScreen) {
+          playerEl.mozRequestFullScreen();
+        } else if (playerEl.msRequestFullscreen) {
+          playerEl.msRequestFullscreen();
+        }
+      } catch (err) {
+        console.warn("Fullscreen request:", err);
+      }
 
       showHudTemp();
       scheduleAutoPlay();
@@ -422,9 +442,19 @@
 
     function closePlayerView() {
       isPlaying = false;
-      document.getElementById('player-view').classList.remove('active');
+      const playerEl = document.getElementById('player-view');
+      playerEl.classList.remove('active');
       document.getElementById('cinema-frame').src = '';
       document.getElementById('catalog-view').style.display = 'block';
+
+      // Salir de pantalla completa nativa
+      try {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      } catch (e) {}
 
       if (autoPlayTimer) clearTimeout(autoPlayTimer);
       setFocus(1, currentCol);
@@ -438,7 +468,7 @@
         if (next.season !== currentSeason) {
           selectSeason(next.season);
         }
-        launchEpisode(next);
+        launchEpisodeWithTrueFullscreen(next);
       } else {
         alert("¡Has llegado al final de la serie!");
         closePlayerView();
@@ -456,7 +486,6 @@
         }
       });
 
-      // Auto-reproducir tras duración estándar
       autoPlayTimer = setTimeout(() => {
         playNextEpisode();
       }, 43 * 60 * 1000);
@@ -475,7 +504,7 @@
     function setupDpadController() {
       window.addEventListener('keydown', (e) => {
         if (isPlaying) {
-          // Tecla Atrás en control remoto
+          // Tecla Atrás del control remoto sale de pantalla completa
           if (e.key === 'Back' || e.key === 'Escape' || e.key === 'BrowserBack') {
             closePlayerView();
             e.preventDefault();
@@ -490,7 +519,7 @@
           } else if (e.key === 'ArrowRight') {
             document.getElementById('btn-hud-exit').focus();
             e.preventDefault();
-          } else if (e.key === 'Enter') {
+          } else if (e.key === 'Enter' || e.key === 'Ok' || e.key === 'Select') {
             if (document.activeElement && document.activeElement.click) {
               document.activeElement.click();
             }
