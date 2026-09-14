@@ -6,7 +6,7 @@
   <title>El Mentalista - Watch Party & Jam en Vivo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <!-- Ably Realtime: Mensajería Pub/Sub ultrarrápida sin recargar página -->
+  <!-- Ably Realtime: WebSockets bidireccionales instantáneos -->
   <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
   <style>
     :root {
@@ -110,7 +110,6 @@
     .sync-btn:hover { background: #1e293b; }
     .sync-btn.primary { background: var(--jam-color); border-color: var(--jam-color); color: #fff; }
 
-    /* Badge del Anfitrión con Control */
     .host-badge-chip {
       background: rgba(245, 158, 11, 0.15);
       border: 1px solid var(--gold);
@@ -239,7 +238,7 @@
       <div><div class="brand-title">El Mentalista</div></div>
     </div>
     <div class="header-actions">
-      <span class="host-badge-chip" id="host-status-indicator">👑 Anfitrión (Control Total)</span>
+      <span class="host-badge-chip" id="host-status-indicator">👑 Anfitrión (Tú tienes el control)</span>
       <button class="jam-toggle-btn" id="btn-jam-toggle" onclick="toggleJamMode()">
         <span>🎉</span> <span id="jam-btn-text">Crear Jam / Fiesta</span>
       </button>
@@ -249,10 +248,10 @@
   <div class="container">
     <div class="share-toast" id="jam-share-bar" style="display: none;">
       <div>
-        <strong>🎉 Sala Jam Activa:</strong> Invita a tus amigos con este enlace (sólo tú controlas los cambios de video):
+        <strong>🎉 Sala Jam Activa:</strong> Comparte este enlace con tus amigos (ellos entran en sintonía contigo):
         <code id="jam-share-link" style="background:#000; padding:2px 6px; border-radius:4px; margin-left:4px;"></code>
       </div>
-      <button onclick="copyJamLink()" style="background:#4f46e5; color:#fff; border:0; padding:5px 12px; border-radius:6px; font-weight:700; cursor:pointer;">Copiar</button>
+      <button onclick="copyJamLink()" style="background:#4f46e5; color:#fff; border:0; padding:5px 12px; border-radius:6px; font-weight:700; cursor:pointer;">Copiar Link</button>
     </div>
 
     <div class="theater-layout" id="theater">
@@ -334,12 +333,11 @@
     let playStartTimestamp = null;
     let timerInterval = null;
 
-    // Parámetros de URL y Roles
-    const urlParams = new URLSearchParams(window.location.search);
-    let jamRoomId = urlParams.get('room') || 'mentalista-vip';
+    // Parámetros de URL
+    let urlParams = new URLSearchParams(window.location.search);
+    let jamRoomId = urlParams.get('room') || null;
     let myUserName = urlParams.get('user') || 'Camilo';
-    // Si la URL NO tiene ?guest=true, entonces es el ANFITRIÓN (Control Total)
-    const isHost = !urlParams.has('guest');
+    let isHost = !urlParams.has('guest');
 
     let ably = null;
     let channel = null;
@@ -352,11 +350,9 @@
         setupSeasons();
         selectSeason(1);
 
-        updateHostUI();
-
-        // Si la URL trae sala, activar automáticamente
-        if (urlParams.has('room') || urlParams.has('guest')) {
-          activateJamUI();
+        // Si ya viene con sala en la URL, unirse directamente
+        if (jamRoomId) {
+          activateJamUI(jamRoomId);
         }
       } catch (e) {
         console.error("Error al cargar episodios:", e);
@@ -367,7 +363,7 @@
       const hostIndicator = document.getElementById('host-status-indicator');
       const hostControls = document.getElementById('host-controls-group');
       if (isHost) {
-        hostIndicator.innerHTML = '👑 Anfitrión (Control Total)';
+        hostIndicator.innerHTML = '👑 Anfitrión (Tú tienes el control)';
         hostIndicator.style.borderColor = 'var(--gold)';
         hostIndicator.style.color = 'var(--gold)';
         hostControls.style.display = 'flex';
@@ -375,7 +371,7 @@
         hostIndicator.innerHTML = '👀 Espectador (Sintonizado)';
         hostIndicator.style.borderColor = '#38bdf8';
         hostIndicator.style.color = '#38bdf8';
-        hostControls.style.display = 'none'; // Los invitados no mueven el control de la sala
+        hostControls.style.display = 'none';
       }
     }
 
@@ -411,7 +407,7 @@
         card.className = `episode-card ${isActive ? 'active' : ''}`;
         card.onclick = () => {
           if (!isHost && jamActive) {
-            alert("Solo el anfitrión de la sala puede cambiar el episodio para todos.");
+            alert("Solo el anfitrión puede cambiar el episodio para todos.");
             return;
           }
           playEpisode(ep, null, true);
@@ -515,7 +511,6 @@
       }, 1000);
     }
 
-    /* === SINCRONIZACIÓN Y COUNTDOWN (SOLO HOST) === */
     function triggerPlaySync() {
       if (!isHost) return;
       if (!currentEp) {
@@ -564,80 +559,92 @@
       }
     }
 
-    /* === WATCH PARTY EN VIVO CON ABLY WEBSOCKETS (CERO RECARGAS) === */
+    /* === GESTIÓN DE SALA Y ACTUALIZACIÓN LIMPIA DE URL === */
     function toggleJamMode() {
       if (!jamActive) {
-        activateJamUI();
+        // Si no hay sala en la URL, generar una sala única para el anfitrión
+        if (!jamRoomId) {
+          jamRoomId = 'mentalista-' + Math.random().toString(36).substring(2, 7);
+          isHost = true;
+          // Actualizar URL del Host en el navegador con history.replaceState (SIN RECARGAR PÁGINA)
+          const newUrl = `${window.location.origin}${window.location.pathname}?room=${jamRoomId}`;
+          window.history.replaceState({ path: newUrl }, '', newUrl);
+        }
+        activateJamUI(jamRoomId);
       } else {
         deactivateJamUI();
       }
     }
 
-    function activateJamUI() {
+    function activateJamUI(roomId) {
       jamActive = true;
+      jamRoomId = roomId;
+      updateHostUI();
+
       document.getElementById('theater').classList.add('jam-active');
       document.getElementById('btn-jam-toggle').classList.add('active');
       document.getElementById('jam-btn-text').textContent = 'Fiesta Activa';
 
-      // Enlace para amigos: Se les pasa el parámetro ?guest=true para que no tengan control de cambiar el video
-      const baseHref = window.location.href.split('?')[0];
+      // Enlace para los invitados (se les agrega &guest=true para darles rol espectador)
+      const baseHref = `${window.location.origin}${window.location.pathname}`;
       const guestUrl = `${baseHref}?room=${jamRoomId}&guest=true&user=Amigo`;
       document.getElementById('jam-share-link').textContent = guestUrl;
       document.getElementById('jam-share-bar').style.display = 'flex';
 
-      // Conexión Ably Realtime Key Pública
+      // Conexión WebSockets
       if (!ably) {
         ably = new Ably.Realtime('2d1DzA.E-XzYg:t1c2Llh7X09B92bN8tXp94A-nQ1dE35tNl4B9mR7xS0');
-        channel = ably.channels.get(`mentalista_${jamRoomId}`);
-
-        // 1. Escuchar Chat en Vivo
-        channel.subscribe('chat', (message) => {
-          const data = message.data;
-          const isMe = data.user === myUserName;
-          appendChatMessage(data.user, data.text, data.time, isMe);
-        });
-
-        // 2. Escuchar Cambio de Episodio (sólo lo emite el host)
-        channel.subscribe('episode_change', (message) => {
-          const data = message.data;
-          const target = allEpisodes.find(e => e.season === data.season && e.episode === data.episode);
-          if (target) {
-            if (currentSeason !== target.season) selectSeason(target.season);
-            playEpisode(target, data.server_url, false);
-            document.getElementById('jam-sync-info').textContent = `T${data.season} E${data.episode} sincronizado por el anfitrión`;
-          }
-        });
-
-        // 3. Escuchar Cambio de Servidor
-        channel.subscribe('server_change', (message) => {
-          const data = message.data;
-          if (currentEp && (currentEp.season !== data.season || currentEp.episode !== data.episode)) {
-            const target = allEpisodes.find(e => e.season === data.season && e.episode === data.episode);
-            if (target) playEpisode(target, data.server_url, false);
-          } else {
-            switchServer(data.server_url);
-          }
-        });
-
-        // 4. Escuchar Cuenta Regresiva de Play
-        channel.subscribe('countdown_play', (message) => {
-          const data = message.data;
-          const target = allEpisodes.find(e => e.season === data.season && e.episode === data.episode);
-          if (target && (!currentEp || currentEp.season !== target.season || currentEp.episode !== target.episode)) {
-            if (currentSeason !== target.season) selectSeason(target.season);
-            playEpisode(target, data.server_url, false);
-          }
-          runCountdown(3);
-        });
-
-        // 5. Escuchar Resincronización
-        channel.subscribe('resync', () => {
-          if (currentServer) {
-            switchServer(currentServer.embed_url);
-            startPlaybackTimer();
-          }
-        });
       }
+
+      channel = ably.channels.get(`mentalista_${jamRoomId}`);
+
+      // 1. Chat en Vivo
+      channel.subscribe('chat', (message) => {
+        const data = message.data;
+        const isMe = data.user === myUserName;
+        appendChatMessage(data.user, data.text, data.time, isMe);
+      });
+
+      // 2. Cambio de Episodio (emitido por el Host)
+      channel.subscribe('episode_change', (message) => {
+        const data = message.data;
+        const target = allEpisodes.find(e => e.season === data.season && e.episode === data.episode);
+        if (target) {
+          if (currentSeason !== target.season) selectSeason(target.season);
+          playEpisode(target, data.server_url, false);
+          document.getElementById('jam-sync-info').textContent = `T${data.season} E${data.episode} en sintonía con el anfitrión`;
+        }
+      });
+
+      // 3. Cambio de Servidor
+      channel.subscribe('server_change', (message) => {
+        const data = message.data;
+        if (currentEp && (currentEp.season !== data.season || currentEp.episode !== data.episode)) {
+          const target = allEpisodes.find(e => e.season === data.season && e.episode === data.episode);
+          if (target) playEpisode(target, data.server_url, false);
+        } else {
+          switchServer(data.server_url);
+        }
+      });
+
+      // 4. Cuenta regresiva coordinada
+      channel.subscribe('countdown_play', (message) => {
+        const data = message.data;
+        const target = allEpisodes.find(e => e.season === data.season && e.episode === data.episode);
+        if (target && (!currentEp || currentEp.season !== target.season || currentEp.episode !== target.episode)) {
+          if (currentSeason !== target.season) selectSeason(target.season);
+          playEpisode(target, data.server_url, false);
+        }
+        runCountdown(3);
+      });
+
+      // 5. Resync
+      channel.subscribe('resync', () => {
+        if (currentServer) {
+          switchServer(currentServer.embed_url);
+          startPlaybackTimer();
+        }
+      });
     }
 
     function deactivateJamUI() {
@@ -649,6 +656,10 @@
       if (channel) {
         channel.unsubscribe();
       }
+      // Limpiar URL
+      const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+      window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+      jamRoomId = null;
     }
 
     function sendChatMessage() {
@@ -658,7 +669,6 @@
       input.value = '';
 
       const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      // Publicar por WebSockets directo sin recargar
       channel.publish('chat', {
         user: myUserName,
         text: text,
@@ -684,7 +694,7 @@
     function copyJamLink() {
       const link = document.getElementById('jam-share-link').textContent;
       navigator.clipboard.writeText(link).then(() => {
-        alert("¡Enlace de invitados copiado! Quienes entren verán la serie guiados bajo tu control.");
+        alert("¡Enlace copiado! Tus amigos entrarán exactamente a tu misma sala y bajo tu control.");
       });
     }
 
