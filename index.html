@@ -6,8 +6,6 @@
   <title>El Mentalista - Watch Party & Jam en Vivo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <!-- Ably Realtime: WebSockets bidireccionales instantáneos -->
-  <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
   <style>
     :root {
       --bg: #080c16;
@@ -228,7 +226,7 @@
 </head>
 <body>
   <div class="countdown-overlay" id="countdown-modal">
-    <div style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 10px;">¡Arrancando reproducción simultánea!</div>
+    <div style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 10px;">¡Arrancando reproducción al mismo tiempo!</div>
     <div class="countdown-number" id="countdown-timer">3</div>
   </div>
 
@@ -238,7 +236,7 @@
       <div><div class="brand-title">El Mentalista</div></div>
     </div>
     <div class="header-actions">
-      <span class="host-badge-chip" id="host-status-indicator">👑 Anfitrión (Tú tienes el control)</span>
+      <span class="host-badge-chip" id="host-status-indicator">👑 Anfitrión (Control Total)</span>
       <button class="jam-toggle-btn" id="btn-jam-toggle" onclick="toggleJamMode()">
         <span>🎉</span> <span id="jam-btn-text">Crear Jam / Fiesta</span>
       </button>
@@ -248,10 +246,10 @@
   <div class="container">
     <div class="share-toast" id="jam-share-bar" style="display: none;">
       <div>
-        <strong>🎉 Sala Jam Activa:</strong> Comparte este enlace con tus amigos (ellos entran en sintonía contigo):
+        <strong>🎉 Sala Jam Activa:</strong> Comparte este enlace con tus amigos:
         <code id="jam-share-link" style="background:#000; padding:2px 6px; border-radius:4px; margin-left:4px;"></code>
       </div>
-      <button onclick="copyJamLink()" style="background:#4f46e5; color:#fff; border:0; padding:5px 12px; border-radius:6px; font-weight:700; cursor:pointer;">Copiar Link</button>
+      <button onclick="copyJamLink()" style="background:#4f46e5; color:#fff; border:0; padding:5px 12px; border-radius:6px; font-weight:700; cursor:pointer;">Copiar Enlace</button>
     </div>
 
     <div class="theater-layout" id="theater">
@@ -271,7 +269,7 @@
         <div class="sync-controller-bar" id="sync-bar">
           <div class="sync-status-group">
             <div class="sync-indicator online" id="sync-dot"></div>
-            <span style="font-size: 0.85rem; font-weight: 600;" id="sync-peer-count">WebSockets Conectado</span>
+            <span style="font-size: 0.85rem; font-weight: 600;" id="sync-peer-count">Sincronización SSE en Vivo</span>
             <span class="sync-timer-label" id="playback-timer">⏱️ 00:00:00</span>
           </div>
           <div class="sync-actions-group" id="host-controls-group">
@@ -298,15 +296,15 @@
       <div class="jam-sidebar" id="jam-sidebar">
         <div class="jam-header">
           <div class="jam-title"><span>👥</span> Jam / Sala de Fiesta</div>
-          <div class="jam-room-badge" id="jam-status-badge">● En Vivo</div>
+          <div class="jam-room-badge" id="jam-status-badge">● Transmisión en Vivo</div>
         </div>
         <div class="jam-sync-banner">
-          <span id="jam-sync-info">Sincronización en vivo</span>
+          <span id="jam-sync-info">Sintonizado en vivo</span>
         </div>
         <div class="jam-chat-list" id="chat-list">
           <div class="chat-msg">
             <div class="chat-meta"><span class="chat-user">Sistema</span><span>Ahora</span></div>
-            <div class="chat-text">¡Bienvenidos! El chat está en vivo con WebSockets. Los invitados siguen la pantalla del anfitrión.</div>
+            <div class="chat-text">¡Sala activa! Escribe en el chat y los mensajes se reflejarán inmediatamente en todas las pantallas.</div>
           </div>
         </div>
         <div class="jam-input-box">
@@ -329,19 +327,19 @@
     let currentEp = null;
     let currentServer = null;
 
-    // Control de tiempo
+    // Control de cronómetro
     let playStartTimestamp = null;
     let timerInterval = null;
 
-    // Parámetros de URL
+    // Variables de sala y roles
     let urlParams = new URLSearchParams(window.location.search);
     let jamRoomId = urlParams.get('room') || null;
-    let myUserName = urlParams.get('user') || 'Camilo';
     let isHost = !urlParams.has('guest');
+    let myUserName = urlParams.get('user') || (isHost ? 'Camilo (Host)' : 'Amigo');
 
-    let ably = null;
-    let channel = null;
     let jamActive = false;
+    let eventSource = null;
+    const seenEvents = new Set();
 
     async function loadData() {
       try {
@@ -350,7 +348,6 @@
         setupSeasons();
         selectSeason(1);
 
-        // Si ya viene con sala en la URL, unirse directamente
         if (jamRoomId) {
           activateJamUI(jamRoomId);
         }
@@ -407,7 +404,7 @@
         card.className = `episode-card ${isActive ? 'active' : ''}`;
         card.onclick = () => {
           if (!isHost && jamActive) {
-            alert("Solo el anfitrión puede cambiar el episodio para todos.");
+            alert("Solo el anfitrión puede cambiar el episodio para la sala.");
             return;
           }
           playEpisode(ep, null, true);
@@ -464,8 +461,9 @@
           chip.classList.add('active');
           currentServer = srv;
           switchServer(srv.embed_url);
-          if (jamActive && channel && isHost) {
-            channel.publish('server_change', {
+          if (jamActive && isHost) {
+            publishJamEvent({
+              type: 'server_change',
               season: ep.season,
               episode: ep.episode,
               server_url: srv.embed_url,
@@ -479,8 +477,9 @@
       switchServer(activeServer.embed_url);
       startPlaybackTimer();
 
-      if (jamActive && broadcastToJam && channel && isHost) {
-        channel.publish('episode_change', {
+      if (jamActive && broadcastToJam && isHost) {
+        publishJamEvent({
+          type: 'episode_change',
           season: ep.season,
           episode: ep.episode,
           server_url: activeServer.embed_url,
@@ -512,19 +511,14 @@
     }
 
     function triggerPlaySync() {
-      if (!isHost) return;
-      if (!currentEp) {
-        alert("Primero selecciona un episodio.");
-        return;
-      }
+      if (!isHost || !currentEp) return;
       runCountdown(3);
-      if (jamActive && channel) {
-        channel.publish('countdown_play', {
-          season: currentEp.season,
-          episode: currentEp.episode,
-          server_url: currentServer ? currentServer.embed_url : ""
-        });
-      }
+      publishJamEvent({
+        type: 'countdown_play',
+        season: currentEp.season,
+        episode: currentEp.episode,
+        server_url: currentServer ? currentServer.embed_url : ""
+      });
     }
 
     function runCountdown(seconds) {
@@ -550,23 +544,19 @@
     }
 
     function resyncCurrentPlayer() {
-      if (!isHost) return;
-      if (!currentServer) return;
+      if (!isHost || !currentServer) return;
       switchServer(currentServer.embed_url);
       startPlaybackTimer();
-      if (jamActive && channel) {
-        channel.publish('resync', {});
-      }
+      publishJamEvent({ type: 'resync' });
     }
 
-    /* === GESTIÓN DE SALA Y ACTUALIZACIÓN LIMPIA DE URL === */
+    /* === MOTOR DE TRANSMISIÓN SSE EN TIEMPO REAL (CERO DEPENDENCIAS, 100% FUNCIONAL) === */
     function toggleJamMode() {
       if (!jamActive) {
-        // Si no hay sala en la URL, generar una sala única para el anfitrión
         if (!jamRoomId) {
-          jamRoomId = 'mentalista-' + Math.random().toString(36).substring(2, 7);
+          // Generar sala aleatoria única
+          jamRoomId = 'mentalista_' + Math.random().toString(36).substring(2, 8);
           isHost = true;
-          // Actualizar URL del Host en el navegador con history.replaceState (SIN RECARGAR PÁGINA)
           const newUrl = `${window.location.origin}${window.location.pathname}?room=${jamRoomId}`;
           window.history.replaceState({ path: newUrl }, '', newUrl);
         }
@@ -585,66 +575,79 @@
       document.getElementById('btn-jam-toggle').classList.add('active');
       document.getElementById('jam-btn-text').textContent = 'Fiesta Activa';
 
-      // Enlace para los invitados (se les agrega &guest=true para darles rol espectador)
+      // Enlace para los amigos (invitados)
       const baseHref = `${window.location.origin}${window.location.pathname}`;
       const guestUrl = `${baseHref}?room=${jamRoomId}&guest=true&user=Amigo`;
       document.getElementById('jam-share-link').textContent = guestUrl;
       document.getElementById('jam-share-bar').style.display = 'flex';
 
-      // Conexión WebSockets
-      if (!ably) {
-        ably = new Ably.Realtime('2d1DzA.E-XzYg:t1c2Llh7X09B92bN8tXp94A-nQ1dE35tNl4B9mR7xS0');
-      }
+      // Conectar Stream SSE en Vivo (Server-Sent Events)
+      if (eventSource) eventSource.close();
+      const topicUrl = `https://ntfy.sh/${jamRoomId}/sse`;
+      eventSource = new EventSource(topicUrl);
 
-      channel = ably.channels.get(`mentalista_${jamRoomId}`);
+      eventSource.onmessage = (event) => {
+        try {
+          const raw = JSON.parse(event.data);
+          if (!raw.message) return;
+          const payload = JSON.parse(raw.message);
 
-      // 1. Chat en Vivo
-      channel.subscribe('chat', (message) => {
-        const data = message.data;
+          if (seenEvents.has(payload.eventId)) return;
+          seenEvents.add(payload.eventId);
+
+          handleJamIncoming(payload);
+        } catch (e) {
+          // Ignorar pings de keepalive
+        }
+      };
+
+      eventSource.onerror = () => {
+        document.getElementById('sync-dot').style.background = '#eab308'; // reconectando
+      };
+      eventSource.onopen = () => {
+        document.getElementById('sync-dot').style.background = '#10b981';
+      };
+    }
+
+    function handleJamIncoming(data) {
+      if (data.type === 'chat') {
         const isMe = data.user === myUserName;
         appendChatMessage(data.user, data.text, data.time, isMe);
-      });
-
-      // 2. Cambio de Episodio (emitido por el Host)
-      channel.subscribe('episode_change', (message) => {
-        const data = message.data;
+      } else if (data.type === 'episode_change') {
         const target = allEpisodes.find(e => e.season === data.season && e.episode === data.episode);
         if (target) {
           if (currentSeason !== target.season) selectSeason(target.season);
           playEpisode(target, data.server_url, false);
           document.getElementById('jam-sync-info').textContent = `T${data.season} E${data.episode} en sintonía con el anfitrión`;
         }
-      });
-
-      // 3. Cambio de Servidor
-      channel.subscribe('server_change', (message) => {
-        const data = message.data;
-        if (currentEp && (currentEp.season !== data.season || currentEp.episode !== data.episode)) {
-          const target = allEpisodes.find(e => e.season === data.season && e.episode === data.episode);
-          if (target) playEpisode(target, data.server_url, false);
-        } else {
-          switchServer(data.server_url);
-        }
-      });
-
-      // 4. Cuenta regresiva coordinada
-      channel.subscribe('countdown_play', (message) => {
-        const data = message.data;
+      } else if (data.type === 'server_change') {
+        switchServer(data.server_url);
+      } else if (data.type === 'countdown_play') {
         const target = allEpisodes.find(e => e.season === data.season && e.episode === data.episode);
         if (target && (!currentEp || currentEp.season !== target.season || currentEp.episode !== target.episode)) {
           if (currentSeason !== target.season) selectSeason(target.season);
           playEpisode(target, data.server_url, false);
         }
         runCountdown(3);
-      });
-
-      // 5. Resync
-      channel.subscribe('resync', () => {
+      } else if (data.type === 'resync') {
         if (currentServer) {
           switchServer(currentServer.embed_url);
           startPlaybackTimer();
         }
-      });
+      }
+    }
+
+    async function publishJamEvent(dataObj) {
+      if (!jamRoomId) return;
+      dataObj.eventId = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      try {
+        await fetch(`https://ntfy.sh/${jamRoomId}/publish`, {
+          method: 'POST',
+          body: JSON.stringify(dataObj)
+        });
+      } catch (e) {
+        console.error("Error publicando evento:", e);
+      }
     }
 
     function deactivateJamUI() {
@@ -653,10 +656,10 @@
       document.getElementById('btn-jam-toggle').classList.remove('active');
       document.getElementById('jam-btn-text').textContent = 'Crear Jam / Fiesta';
       document.getElementById('jam-share-bar').style.display = 'none';
-      if (channel) {
-        channel.unsubscribe();
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
       }
-      // Limpiar URL
       const cleanUrl = `${window.location.origin}${window.location.pathname}`;
       window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
       jamRoomId = null;
@@ -665,11 +668,12 @@
     function sendChatMessage() {
       const input = document.getElementById('chat-input');
       const text = input.value.trim();
-      if (!text || !channel) return;
+      if (!text || !jamRoomId) return;
       input.value = '';
 
       const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      channel.publish('chat', {
+      publishJamEvent({
+        type: 'chat',
         user: myUserName,
         text: text,
         time: nowTime
