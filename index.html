@@ -72,6 +72,7 @@
     .player-box {
       background: #000; border-radius: 16px; overflow: hidden;
       box-shadow: 0 10px 35px rgba(0,0,0,0.7); border: 1px solid var(--border);
+      position: relative;
     }
     .video-wrapper {
       position: relative; width: 100%; padding-top: 56.25%; background: #040711;
@@ -83,6 +84,7 @@
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       color: var(--text-muted); background: radial-gradient(circle at center, #17213c 0%, #080c16 100%);
+      z-index: 2;
     }
     .play-btn-big {
       width: 65px; height: 65px; background: var(--accent); border-radius: 50%;
@@ -90,6 +92,28 @@
       box-shadow: 0 0 25px var(--accent-glow);
     }
     .play-btn-big svg { width: 28px; height: 28px; fill: #fff; margin-left: 4px; }
+
+    /* Flash Banner de Sincronización */
+    .sync-flash-alert {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(16, 185, 129, 0.95);
+      color: #000;
+      padding: 8px 18px;
+      border-radius: 30px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.5);
+      z-index: 50;
+      display: none;
+      animation: pulseAlert 0.4s ease;
+    }
+    @keyframes pulseAlert {
+      0% { transform: translate(-50%, -10px); opacity: 0; }
+      100% { transform: translate(-50%, 0); opacity: 1; }
+    }
 
     /* Barra de Sincronización */
     .sync-controller-bar {
@@ -103,22 +127,15 @@
     .sync-actions-group { display: flex; align-items: center; gap: 8px; }
     .sync-btn {
       background: rgba(255, 255, 255, 0.08); border: 1px solid var(--border); color: var(--text);
-      padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+      padding: 7px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
     }
     .sync-btn:hover { background: #1e293b; }
-    .sync-btn.primary { background: var(--jam-color); border-color: var(--jam-color); color: #fff; }
+    .sync-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 0 15px var(--accent-glow); }
 
     .host-badge-chip {
-      background: rgba(245, 158, 11, 0.15);
-      border: 1px solid var(--gold);
-      color: var(--gold);
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 0.76rem;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
+      background: rgba(245, 158, 11, 0.15); border: 1px solid var(--gold); color: var(--gold);
+      padding: 4px 10px; border-radius: 20px; font-size: 0.76rem; font-weight: 700;
+      display: inline-flex; align-items: center; gap: 5px;
     }
 
     .player-meta {
@@ -180,19 +197,19 @@
       background: #1e1b4b; border: 1px solid #6366f1; color: #e0e7ff; padding: 10px 16px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;
     }
 
-    /* Countdown Modal */
+    /* Modal / Countdown */
     .countdown-overlay {
-      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px);
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(10px);
       z-index: 1000; display: none; align-items: center; justify-content: center; flex-direction: column;
     }
     .countdown-number {
-      font-size: 5rem; font-weight: 800; color: var(--accent);
-      animation: popScale 0.8s ease infinite;
+      font-size: 6rem; font-weight: 900; color: var(--accent);
+      animation: popScale 0.7s ease infinite;
     }
     @keyframes popScale {
       0% { transform: scale(0.6); opacity: 0; }
       50% { transform: scale(1.2); opacity: 1; }
-      100% { transform: scale(1); opacity: 0.8; }
+      100% { transform: scale(1); opacity: 0.9; }
     }
 
     /* Temporadas y Episodios */
@@ -226,7 +243,7 @@
 </head>
 <body>
   <div class="countdown-overlay" id="countdown-modal">
-    <div style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 10px;">¡Arrancando reproducción al mismo tiempo!</div>
+    <div style="font-size: 1.3rem; color: #fff; font-weight: 700; margin-bottom: 12px;" id="countdown-banner-txt">🎬 ¡Arrancando reproducción conjunta!</div>
     <div class="countdown-number" id="countdown-timer">3</div>
   </div>
 
@@ -246,7 +263,7 @@
   <div class="container">
     <div class="share-toast" id="jam-share-bar" style="display: none;">
       <div>
-        <strong>🎉 Sala Jam Activa:</strong> Comparte este enlace con tus amigos:
+        <strong>🎉 Sala Jam Activa:</strong> Comparte este enlace con tus amigos (ellos entran en sintonía contigo):
         <code id="jam-share-link" style="background:#000; padding:2px 6px; border-radius:4px; margin-left:4px;"></code>
       </div>
       <button onclick="copyJamLink()" style="background:#4f46e5; color:#fff; border:0; padding:5px 12px; border-radius:6px; font-weight:700; cursor:pointer;">Copiar Enlace</button>
@@ -254,6 +271,7 @@
 
     <div class="theater-layout" id="theater">
       <div class="player-box" id="player-anchor">
+        <div class="sync-flash-alert" id="sync-flash">⚡ Sincronizado con el Anfitrión</div>
         <div class="video-wrapper">
           <div class="player-placeholder" id="placeholder">
             <div class="play-btn-big">
@@ -269,7 +287,7 @@
         <div class="sync-controller-bar" id="sync-bar">
           <div class="sync-status-group">
             <div class="sync-indicator online" id="sync-dot"></div>
-            <span style="font-size: 0.85rem; font-weight: 600;" id="sync-peer-count">Sincronización SSE en Vivo</span>
+            <span style="font-size: 0.85rem; font-weight: 600;" id="sync-peer-count">En Vivo (SSE)</span>
             <span class="sync-timer-label" id="playback-timer">⏱️ 00:00:00</span>
           </div>
           <div class="sync-actions-group" id="host-controls-group">
@@ -296,7 +314,7 @@
       <div class="jam-sidebar" id="jam-sidebar">
         <div class="jam-header">
           <div class="jam-title"><span>👥</span> Jam / Sala de Fiesta</div>
-          <div class="jam-room-badge" id="jam-status-badge">● Transmisión en Vivo</div>
+          <div class="jam-room-badge" id="jam-status-badge">● En Vivo</div>
         </div>
         <div class="jam-sync-banner">
           <span id="jam-sync-info">Sintonizado en vivo</span>
@@ -327,7 +345,7 @@
     let currentEp = null;
     let currentServer = null;
 
-    // Control de cronómetro
+    // Control de tiempo de sesión compartido
     let playStartTimestamp = null;
     let timerInterval = null;
 
@@ -495,7 +513,12 @@
       const frame = document.getElementById('video-frame');
       placeholder.style.display = 'none';
       frame.style.display = 'block';
-      if (frame.src !== url) frame.src = url;
+
+      // Forzar recarga limpia del iframe
+      frame.src = '';
+      setTimeout(() => {
+        frame.src = url;
+      }, 50);
     }
 
     function startPlaybackTimer(baseStartTime = null) {
@@ -510,8 +533,22 @@
       }, 1000);
     }
 
+    function flashSyncBanner(msg) {
+      const el = document.getElementById('sync-flash');
+      el.textContent = msg;
+      el.style.display = 'block';
+      setTimeout(() => {
+        el.style.display = 'none';
+      }, 2500);
+    }
+
+    /* === PLAY SINCRONIZADO REAL === */
     function triggerPlaySync() {
-      if (!isHost || !currentEp) return;
+      if (!isHost) return;
+      if (!currentEp) {
+        alert("Primero selecciona un episodio.");
+        return;
+      }
       runCountdown(3);
       publishJamEvent({
         type: 'countdown_play',
@@ -538,6 +575,7 @@
           if (currentServer) {
             switchServer(currentServer.embed_url);
             startPlaybackTimer();
+            flashSyncBanner("⚡ ¡Reproducción iniciada al mismo tiempo!");
           }
         }
       }, 1000);
@@ -550,11 +588,10 @@
       publishJamEvent({ type: 'resync' });
     }
 
-    /* === MOTOR DE TRANSMISIÓN SSE EN TIEMPO REAL (CERO DEPENDENCIAS, 100% FUNCIONAL) === */
+    /* === MOTOR DE TRANSMISIÓN SSE === */
     function toggleJamMode() {
       if (!jamActive) {
         if (!jamRoomId) {
-          // Generar sala aleatoria única
           jamRoomId = 'mentalista_' + Math.random().toString(36).substring(2, 8);
           isHost = true;
           const newUrl = `${window.location.origin}${window.location.pathname}?room=${jamRoomId}`;
@@ -575,13 +612,11 @@
       document.getElementById('btn-jam-toggle').classList.add('active');
       document.getElementById('jam-btn-text').textContent = 'Fiesta Activa';
 
-      // Enlace para los amigos (invitados)
       const baseHref = `${window.location.origin}${window.location.pathname}`;
       const guestUrl = `${baseHref}?room=${jamRoomId}&guest=true&user=Amigo`;
       document.getElementById('jam-share-link').textContent = guestUrl;
       document.getElementById('jam-share-bar').style.display = 'flex';
 
-      // Conectar Stream SSE en Vivo (Server-Sent Events)
       if (eventSource) eventSource.close();
       const topicUrl = `https://ntfy.sh/${jamRoomId}/sse`;
       eventSource = new EventSource(topicUrl);
@@ -596,13 +631,11 @@
           seenEvents.add(payload.eventId);
 
           handleJamIncoming(payload);
-        } catch (e) {
-          // Ignorar pings de keepalive
-        }
+        } catch (e) {}
       };
 
       eventSource.onerror = () => {
-        document.getElementById('sync-dot').style.background = '#eab308'; // reconectando
+        document.getElementById('sync-dot').style.background = '#eab308';
       };
       eventSource.onopen = () => {
         document.getElementById('sync-dot').style.background = '#10b981';
@@ -619,9 +652,11 @@
           if (currentSeason !== target.season) selectSeason(target.season);
           playEpisode(target, data.server_url, false);
           document.getElementById('jam-sync-info').textContent = `T${data.season} E${data.episode} en sintonía con el anfitrión`;
+          flashSyncBanner(`🎬 Anfitrión cambió a T${data.season} E${data.episode}`);
         }
       } else if (data.type === 'server_change') {
         switchServer(data.server_url);
+        flashSyncBanner(`⚡ Servidor actualizado`);
       } else if (data.type === 'countdown_play') {
         const target = allEpisodes.find(e => e.season === data.season && e.episode === data.episode);
         if (target && (!currentEp || currentEp.season !== target.season || currentEp.episode !== target.episode)) {
@@ -633,6 +668,7 @@
         if (currentServer) {
           switchServer(currentServer.embed_url);
           startPlaybackTimer();
+          flashSyncBanner("🔄 Resincronizado");
         }
       }
     }
