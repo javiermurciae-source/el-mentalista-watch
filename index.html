@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>El Mentalista - Android TV</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
@@ -548,24 +551,16 @@
 
     /* === DETECCIÓN ROBUSTA DE FIN DE EPISODIO === */
     function initIframeListener() {
-      // 1. Escuchar eventos postMessage de JWPlayer, Video.js y reproductores HLS
       window.addEventListener('message', (event) => {
+        if (!isPlaying || isCountdownActive) return;
         try {
           const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-          const str = JSON.stringify(data).toLowerCase();
-
-          // Detección de fin de reproducción
-          if (str.includes('ended') || str.includes('complete') || str.includes('finish') || str.includes('video_ended')) {
+          if (!data) return;
+          // Eventos específicos de reproductores HTML5 / JW / VideoJS
+          if (data.event === 'ended' || data.type === 'ended' || data.action === 'ended' || data === 'ended') {
             triggerNextCountdown(5);
           }
-        } catch (e) {
-          if (typeof event.data === 'string') {
-            const s = event.data.toLowerCase();
-            if (s.includes('ended') || s.includes('complete')) {
-              triggerNextCountdown(5);
-            }
-          }
-        }
+        } catch (e) {}
       });
     }
 
