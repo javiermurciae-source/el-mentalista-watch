@@ -242,6 +242,14 @@
       font-size: 1.05rem;
       font-weight: 800;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .hud-button.primary {
+      background: var(--accent);
+      border-color: #ff3344;
+      box-shadow: 0 4px 20px rgba(229, 9, 20, 0.5);
     }
     .hud-button:focus,
     .hud-button.is-focused {
@@ -362,7 +370,10 @@
   <!-- 2. VISTA REPRODUCTOR -->
   <div id="player-view">
     <div class="floating-tv-hud" id="tv-hud">
-      <button class="hud-button" onclick="closePlayerView()">
+      <button class="hud-button primary" id="hud-btn-next" onclick="triggerNextCountdown(5)">
+        ⏭️ Siguiente Episodio
+      </button>
+      <button class="hud-button" id="hud-btn-exit" onclick="closePlayerView()">
         ✖ Salir al Menú
       </button>
     </div>
@@ -615,13 +626,16 @@
       document.getElementById('next-overlay').style.display = 'none';
     }
 
-    function showHudTemp() {
+    function showHudTemp(focusNext = false) {
       const hud = document.getElementById('tv-hud');
       hud.classList.add('visible');
+      if (focusNext) {
+        document.getElementById('hud-btn-next').focus();
+      }
       if (hudTimer) clearTimeout(hudTimer);
       hudTimer = setTimeout(() => {
         hud.classList.remove('visible');
-      }, 3500);
+      }, 5000);
     }
 
     /* === NAVEGACIÓN D-PAD CONTROL REMOTO === */
@@ -654,14 +668,31 @@
             return;
           }
 
-          // Flecha Derecha o Abajo durante reproducción enfoca el botón de Siguiente con 5s
+          // Mostrar HUD al presionar cualquier tecla direccional o OK
+          showHudTemp();
+
           if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-            triggerNextCountdown(5);
+            document.getElementById('hud-btn-exit').focus();
             e.preventDefault();
             return;
           }
 
-          showHudTemp();
+          if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            document.getElementById('hud-btn-next').focus();
+            e.preventDefault();
+            return;
+          }
+
+          if (e.key === 'Enter' || e.key === 'Ok') {
+            if (document.activeElement && (document.activeElement.id === 'hud-btn-next' || document.activeElement.id === 'hud-btn-exit')) {
+              document.activeElement.click();
+            } else {
+              // Si no tiene foco en el HUD, el botón OK activa el botón Siguiente directamente
+              triggerNextCountdown(5);
+            }
+            e.preventDefault();
+            return;
+          }
           return;
         }
 
