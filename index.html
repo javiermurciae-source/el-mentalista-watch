@@ -410,7 +410,7 @@
       </div>
     </div>
 
-    <iframe id="cinema-frame" class="video-full-frame" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    <div id="cinema-frame-container"></div>
   </div>
 
   <script>
@@ -452,7 +452,7 @@
 
     async function init() {
       try {
-        const res = await fetch('episodes.json');
+        const res = await fetch('episodes.json?v=' + Date.now());
         allEpisodes = await res.json();
 
         renderSeasons();
@@ -529,7 +529,18 @@
       cancelNextCountdown();
 
       const bestUrl = pickBestServer(ep.servers);
-      document.getElementById('cinema-frame').src = bestUrl;
+      const container = document.getElementById('cinema-frame-container');
+      container.innerHTML = '';
+
+      const frame = document.createElement('iframe');
+      frame.id = 'cinema-frame';
+      frame.className = 'video-full-frame';
+      frame.allowFullscreen = true;
+      frame.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+      frame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+      frame.removeAttribute('sandbox'); // Asegura 100% que ningún sandbox residual exista
+      frame.src = bestUrl;
+      container.appendChild(frame);
 
       document.getElementById('catalog-view').style.display = 'none';
       const playerEl = document.getElementById('player-view');
@@ -547,7 +558,8 @@
 
       const playerEl = document.getElementById('player-view');
       playerEl.classList.remove('active');
-      document.getElementById('cinema-frame').src = '';
+      const container = document.getElementById('cinema-frame-container');
+      if (container) container.innerHTML = '';
       document.getElementById('catalog-view').style.display = 'block';
 
       try {
