@@ -218,8 +218,10 @@
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      padding: 16px 24px;
+      padding: 20px 20px 50px 20px;
       box-sizing: border-box;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
     #player-view.active {
       display: flex;
@@ -228,19 +230,14 @@
     .cinema-wrapper {
       position: relative;
       width: 100%;
-      max-width: 1100px;
+      max-width: 1000px;
       height: 0;
-      padding-bottom: 56.25%; /* 16:9 ratio */
-      max-height: calc(100vh - 120px);
+      padding-bottom: 56.25%; /* 16:9 ratio exacto */
       background: #000;
       border-radius: 16px;
       overflow: hidden;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9), 0 0 0 1px var(--border);
-    }
-    @media (max-height: 700px) {
-      .cinema-wrapper {
-        padding-bottom: min(56.25%, calc(100vh - 105px));
-      }
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.95), 0 0 0 1px var(--border);
+      flex-shrink: 0;
     }
 
     .cinema-frame {
@@ -254,77 +251,77 @@
       background: #000;
     }
 
-    /* Barra de controles manuales abajo */
+    /* Barra de controles manuales abajo - 100% fuera de la ventana de video */
     .player-bottom-bar {
       width: 100%;
-      max-width: 1100px;
+      max-width: 1000px;
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
       gap: 16px;
-      margin-top: 14px;
-      padding: 12px 20px;
+      margin-top: 18px;
+      padding: 16px 24px;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      flex-shrink: 0;
     }
     .player-info-meta {
       display: flex;
       flex-direction: column;
-      gap: 3px;
-      overflow: hidden;
+      gap: 4px;
+      min-width: 240px;
     }
     .player-ep-code {
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       font-weight: 800;
       color: var(--gold);
       letter-spacing: 0.5px;
     }
     .player-ep-title {
-      font-size: 1.1rem;
-      font-weight: 800;
+      font-size: 1.25rem;
+      font-weight: 900;
       color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
     .player-manual-nav {
       display: flex;
       align-items: center;
-      gap: 10px;
-      flex-shrink: 0;
+      gap: 12px;
+      flex-wrap: wrap;
     }
     .player-nav-btn {
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid var(--border);
       color: #fff;
-      padding: 10px 18px;
-      border-radius: 10px;
-      font-size: 0.95rem;
+      padding: 12px 22px;
+      border-radius: 12px;
+      font-size: 1rem;
       font-weight: 800;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       transition: all 0.2s ease;
     }
     .player-nav-btn:hover:not(:disabled) {
-      background: rgba(255, 255, 255, 0.16);
-      border-color: rgba(255, 255, 255, 0.3);
-      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.35);
+      transform: translateY(-2px);
     }
     .player-nav-btn:disabled {
-      opacity: 0.35;
+      opacity: 0.3;
       cursor: not-allowed;
     }
     .player-nav-btn.primary {
       background: var(--accent);
       border-color: var(--accent);
+      box-shadow: 0 4px 15px var(--accent-glow);
     }
     .player-nav-btn.primary:hover:not(:disabled) {
-      background: #b90610;
-      border-color: #b90610;
+      background: #c50812;
+      border-color: #c50812;
     }
     .player-nav-btn:focus,
     .player-nav-btn.is-focused {
@@ -498,47 +495,63 @@
 
     function updateUrlForEpisode(ep) {
       if (ep) {
-        const url = new URL(window.location.href);
-        url.searchParams.set('s', ep.season);
-        url.searchParams.set('e', ep.episode);
-        window.history.pushState({ view: 'player', season: ep.season, episode: ep.episode }, '', url.toString());
+        const newHash = `#s${ep.season}e${ep.episode}`;
+        if (window.location.hash !== newHash) {
+          window.location.hash = newHash;
+        }
       } else {
-        const url = new URL(window.location.href);
-        url.searchParams.delete('s');
-        url.searchParams.delete('e');
-        window.history.pushState({ view: 'catalog' }, '', url.toString());
-      }
-    }
-
-    function checkUrlRouteOnLoad() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const s = parseInt(urlParams.get('s'), 10);
-      const e = parseInt(urlParams.get('e'), 10);
-      if (!isNaN(s) && !isNaN(e)) {
-        const found = allEpisodes.find(ep => ep.season === s && ep.episode === e);
-        if (found) {
-          selectSeason(found.season);
-          launchEpisode(found, false);
-          return;
+        if (window.location.hash && window.location.hash !== '#') {
+          history.pushState("", document.title, window.location.pathname + window.location.search);
         }
       }
     }
 
-    window.addEventListener('popstate', (event) => {
-      if (isLocked) return;
+    function parseEpisodeFromHash() {
+      const hash = window.location.hash || '';
+      // Formato #s1e5 o #s=1&e=5 o search params
+      const matchHash = hash.match(/#s(\d+)e(\d+)/i);
+      if (matchHash) {
+        return { season: parseInt(matchHash[1], 10), episode: parseInt(matchHash[2], 10) };
+      }
       const urlParams = new URLSearchParams(window.location.search);
       const s = parseInt(urlParams.get('s'), 10);
       const e = parseInt(urlParams.get('e'), 10);
       if (!isNaN(s) && !isNaN(e)) {
-        const found = allEpisodes.find(ep => ep.season === s && ep.episode === e);
+        return { season: s, episode: e };
+      }
+      return null;
+    }
+
+    function checkUrlRouteOnLoad() {
+      const route = parseEpisodeFromHash();
+      if (route) {
+        const found = allEpisodes.find(ep => ep.season === route.season && ep.episode === route.episode);
+        if (found) {
+          selectSeason(found.season);
+          launchEpisode(found, false);
+        }
+      }
+    }
+
+    window.addEventListener('hashchange', () => {
+      const route = parseEpisodeFromHash();
+      if (route) {
+        const found = allEpisodes.find(ep => ep.season === route.season && ep.episode === route.episode);
         if (found) {
           if (found.season !== currentSeason) selectSeason(found.season);
           launchEpisode(found, false);
           return;
         }
       }
-      // Si no hay parámetros s y e en la URL (o se dio atrás desde el capítulo), volver a la lista completa
+      // Si el hash se limpió (al darle botón atrás del navegador), volver a la lista completa
       if (isPlaying) {
+        closePlayerView(false);
+      }
+    });
+
+    window.addEventListener('popstate', () => {
+      const route = parseEpisodeFromHash();
+      if (!route && isPlaying) {
         closePlayerView(false);
       }
     });
@@ -617,7 +630,11 @@
       document.getElementById('catalog-view').style.display = 'block';
 
       if (updateHistory) {
-        updateUrlForEpisode(null);
+        if (window.location.hash && window.location.hash.startsWith('#s')) {
+          window.history.back();
+        } else {
+          updateUrlForEpisode(null);
+        }
       }
 
       setFocus(1, currentCol);
