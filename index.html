@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>Private Stream TV</title>
+  <title>El Mentalista - Streaming</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
@@ -333,139 +333,13 @@
       transform: scale(1.05);
     }
 
-    /* 0. PANTALLA DE BLOQUEO PRIVADO (PIN 2380) */
-    #lock-view {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 999999;
-      user-select: none;
-    }
-    .lock-card {
-      background: rgba(15, 23, 42, 0.95);
-      border: 2px solid rgba(56, 189, 248, 0.3);
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
-      border-radius: 24px;
-      padding: 36px 44px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      max-width: 440px;
-      width: 90%;
-      text-align: center;
-    }
-    .lock-icon {
-      font-size: 3rem;
-      margin-bottom: 12px;
-    }
-    .lock-title {
-      font-size: 1.6rem;
-      font-weight: 900;
-      color: #fff;
-      margin-bottom: 6px;
-    }
-    .lock-subtitle {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      margin-bottom: 24px;
-    }
-    .pin-display {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-    .pin-dot {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      transition: all 0.2s ease;
-    }
-    .pin-dot.filled {
-      background: var(--tv-focus);
-      border-color: var(--tv-focus);
-      box-shadow: 0 0 15px var(--tv-glow);
-      transform: scale(1.15);
-    }
-    .pin-keypad {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-      width: 100%;
-    }
-    .pin-key {
-      background: rgba(255, 255, 255, 0.05);
-      border: 2px solid var(--border);
-      color: #fff;
-      font-size: 1.5rem;
-      font-weight: 800;
-      padding: 16px 0;
-      border-radius: 14px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-    .pin-key:focus,
-    .pin-key.is-focused {
-      border-color: var(--tv-focus) !important;
-      background: rgba(56, 189, 248, 0.2) !important;
-      box-shadow: 0 0 25px var(--tv-glow) !important;
-      transform: scale(1.08);
-    }
-    .lock-error {
-      color: #ef4444;
-      font-size: 0.9rem;
-      font-weight: 800;
-      margin-top: 14px;
-      min-height: 22px;
-      letter-spacing: 0.5px;
-    }
+
   </style>
 </head>
 <body>
 
-  <!-- 0. PANTALLA PRIVADA CON PIN (2380) -->
-  <div id="lock-view">
-    <div class="lock-card">
-      <div class="lock-icon">🔒</div>
-      <div class="lock-title">Acceso Privado</div>
-      <div class="lock-subtitle">Introduce tu PIN de seguridad con el control remoto</div>
-      
-      <div class="pin-display">
-        <div class="pin-dot" id="dot-0"></div>
-        <div class="pin-dot" id="dot-1"></div>
-        <div class="pin-dot" id="dot-2"></div>
-        <div class="pin-dot" id="dot-3"></div>
-      </div>
-
-      <div class="pin-keypad">
-        <button class="pin-key tv-pin-item" data-pin-key="1">1</button>
-        <button class="pin-key tv-pin-item" data-pin-key="2">2</button>
-        <button class="pin-key tv-pin-item" data-pin-key="3">3</button>
-        <button class="pin-key tv-pin-item" data-pin-key="4">4</button>
-        <button class="pin-key tv-pin-item" data-pin-key="5">5</button>
-        <button class="pin-key tv-pin-item" data-pin-key="6">6</button>
-        <button class="pin-key tv-pin-item" data-pin-key="7">7</button>
-        <button class="pin-key tv-pin-item" data-pin-key="8">8</button>
-        <button class="pin-key tv-pin-item" data-pin-key="9">9</button>
-        <button class="pin-key tv-pin-item" data-pin-key="clear" style="font-size: 1.1rem; color: #f87171;">⌫</button>
-        <button class="pin-key tv-pin-item" data-pin-key="0">0</button>
-        <button class="pin-key tv-pin-item" data-pin-key="ok" style="font-size: 1.1rem; color: #34d399;">✓</button>
-      </div>
-      
-      <div class="lock-error" id="lock-error-msg"></div>
-    </div>
-  </div>
-
   <!-- 1. VISTA CATÁLOGO -->
-  <div id="catalog-view" style="display: none;">
+  <div id="catalog-view">
     <header>
       <div class="brand">
         <div class="brand-icon">M</div>
@@ -544,111 +418,6 @@
       }
       return servers[0].embed_url;
     }
-
-    const CORRECT_PIN = "2380";
-    let enteredPin = "";
-    let isLocked = true;
-    let pinRow = 0;
-    let pinCol = 0;
-    const PIN_KEYPAD_GRID = [
-      ["1", "2", "3"],
-      ["4", "5", "6"],
-      ["7", "8", "9"],
-      ["clear", "0", "ok"]
-    ];
-
-    function checkAuth() {
-      if (sessionStorage.getItem('tv_auth') === 'granted') {
-        unlockApp();
-      } else {
-        showLockScreen();
-      }
-    }
-
-    function showLockScreen() {
-      isLocked = true;
-      document.getElementById('lock-view').style.display = 'flex';
-      document.getElementById('catalog-view').style.display = 'none';
-      updatePinDisplay();
-      updatePinFocus();
-    }
-
-    function updatePinDisplay() {
-      for (let i = 0; i < 4; i++) {
-        const dot = document.getElementById(`dot-${i}`);
-        if (dot) {
-          if (i < enteredPin.length) dot.classList.add('filled');
-          else dot.classList.remove('filled');
-        }
-      }
-    }
-
-    function updatePinFocus() {
-      document.querySelectorAll('.tv-pin-item').forEach(el => el.classList.remove('is-focused'));
-      const key = PIN_KEYPAD_GRID[pinRow][pinCol];
-      const target = document.querySelector(`.tv-pin-item[data-pin-key="${key}"]`);
-      if (target) {
-        target.classList.add('is-focused');
-        target.focus();
-      }
-    }
-
-    function pressPinKey(key) {
-      const errEl = document.getElementById('lock-error-msg');
-      if (errEl) errEl.textContent = '';
-
-      if (key === 'clear') {
-        enteredPin = enteredPin.slice(0, -1);
-        updatePinDisplay();
-        return;
-      }
-
-      if (key === 'ok') {
-        submitPin();
-        return;
-      }
-
-      if (enteredPin.length < 4) {
-        enteredPin += key;
-        updatePinDisplay();
-        if (enteredPin.length === 4) {
-          setTimeout(submitPin, 150);
-        }
-      }
-    }
-
-    function submitPin() {
-      if (enteredPin === CORRECT_PIN) {
-        sessionStorage.setItem('tv_auth', 'granted');
-        unlockApp();
-      } else {
-        const errEl = document.getElementById('lock-error-msg');
-        if (errEl) errEl.textContent = '❌ PIN incorrecto. Intenta de nuevo.';
-        enteredPin = '';
-        updatePinDisplay();
-      }
-    }
-
-    function unlockApp() {
-      isLocked = false;
-      document.getElementById('lock-view').style.display = 'none';
-      document.getElementById('catalog-view').style.display = 'block';
-      if (allEpisodes.length === 0) {
-        init();
-      } else {
-        updateFocusUI();
-        checkUrlRouteOnLoad();
-      }
-    }
-
-    // Inicializar eventos de clic en teclado PIN
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('.tv-pin-item').forEach(btn => {
-        btn.addEventListener('click', () => {
-          pressPinKey(btn.dataset.pinKey);
-        });
-      });
-    });
 
     async function init() {
       try {
@@ -857,51 +626,6 @@
     /* === NAVEGACIÓN D-PAD CONTROL REMOTO === */
     function setupDpadController() {
       window.addEventListener('keydown', (e) => {
-        // 1. Manejo en Pantalla de Bloqueo (PIN 2380)
-        if (isLocked) {
-          if (e.key >= '0' && e.key <= '9') {
-            pressPinKey(e.key);
-            e.preventDefault();
-            return;
-          }
-          if (e.key === 'Backspace') {
-            pressPinKey('clear');
-            e.preventDefault();
-            return;
-          }
-          if (e.key === 'ArrowUp' || e.key === 'Up') {
-            if (pinRow > 0) pinRow--;
-            updatePinFocus();
-            e.preventDefault();
-            return;
-          }
-          if (e.key === 'ArrowDown' || e.key === 'Down') {
-            if (pinRow < PIN_KEYPAD_GRID.length - 1) pinRow++;
-            updatePinFocus();
-            e.preventDefault();
-            return;
-          }
-          if (e.key === 'ArrowLeft' || e.key === 'Left') {
-            if (pinCol > 0) pinCol--;
-            updatePinFocus();
-            e.preventDefault();
-            return;
-          }
-          if (e.key === 'ArrowRight' || e.key === 'Right') {
-            if (pinCol < 2) pinCol++;
-            updatePinFocus();
-            e.preventDefault();
-            return;
-          }
-          if (e.key === 'Enter' || e.key === 'Ok' || e.key === 'Select') {
-            const key = PIN_KEYPAD_GRID[pinRow][pinCol];
-            pressPinKey(key);
-            e.preventDefault();
-            return;
-          }
-          return;
-        }
-
         if (isPlaying) {
           // Tecla Atrás del control remoto o navegador lleva a la lista completa
           if (e.key === 'Back' || e.key === 'Escape' || e.key === 'BrowserBack') {
@@ -1055,7 +779,7 @@
     }
 
     setupDpadController();
-    checkAuth();
+    init();
     setTimeout(setupDragToScroll, 500);
   </script>
 </body>
