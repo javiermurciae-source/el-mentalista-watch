@@ -1,8 +1,8 @@
 {
-  "id": "org.javiermurciae.elmentalista.https",
-  "version": "3.0.0",
-  "name": "🎬 El Mentalista (Streams HTTPS)",
-  "description": "Enlaces directos de servidores web HTTPS (Videasy, VSEmbed, VidLink, Hyper, Nebula) de tu web sin torrents.",
+  "id": "org.javiermurciae.elmentalista.https.v4",
+  "version": "4.0.0",
+  "name": "⚡ El Mentalista (100% HTTPS Web)",
+  "description": "Servidores directos de tu web en HTTPS (Morencius, Nebula, Videasy, Goldmember).",
   "resources": [
     "stream"
   ],
