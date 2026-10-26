@@ -1,8 +1,8 @@
 {
-  "id": "org.javiermurciae.elmentalista.pro",
-  "version": "2.0.0",
-  "name": "🎬 El Mentalista (Reproducción Directa)",
-  "description": "Reproducción 100% nativa dentro de Stremio en 1080p y Dual Audio / Español Latino sin advertencias ni ventanas externas.",
+  "id": "org.javiermurciae.elmentalista.https",
+  "version": "3.0.0",
+  "name": "🎬 El Mentalista (Streams HTTPS)",
+  "description": "Enlaces directos de servidores web HTTPS (Videasy, VSEmbed, VidLink, Hyper, Nebula) de tu web sin torrents.",
   "resources": [
     "stream"
   ],
