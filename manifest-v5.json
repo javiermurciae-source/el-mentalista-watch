@@ -1,0 +1,16 @@
+{
+  "id": "org.javiermurciae.elmentalistav5",
+  "version": "5.0.0",
+  "name": "🔥 El Mentalista (100% Web HTTPS)",
+  "description": "Servidores HTTPS directos de tu plataforma.",
+  "resources": [
+    "stream"
+  ],
+  "types": [
+    "series"
+  ],
+  "idPrefixes": [
+    "tt1196946"
+  ],
+  "catalogs": []
+}
