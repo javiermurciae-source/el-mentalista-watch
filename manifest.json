@@ -1,0 +1,16 @@
+{
+  "id": "org.javiermurciae.elmentalista.cloud",
+  "version": "1.0.0",
+  "name": "🎬 El Mentalista (Cloud Scraper)",
+  "description": "Servidores de streaming directos (Morencius, Nebula, Eclipse, Goldmember) alojados 100% en GitHub Pages, sin servidores locales.",
+  "resources": [
+    "stream"
+  ],
+  "types": [
+    "series"
+  ],
+  "idPrefixes": [
+    "tt1196946"
+  ],
+  "catalogs": []
+}
